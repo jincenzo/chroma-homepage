@@ -1,0 +1,15 @@
+services:
+  chroma-homepage:
+    build: .
+    container_name: chroma-homepage
+    restart: unless-stopped
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      PORT: 3000
+      DATA_DIR: /data
+    volumes:
+      - chroma-data:/data
+
+volumes:
+  chroma-data:

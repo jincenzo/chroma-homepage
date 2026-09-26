@@ -1,0 +1,194 @@
+{
+  "schemaVersion": 1,
+  "homepage": {
+    "title": "Chroma Homepage",
+    "defaultTabId": "home",
+    "searchShortcuts": [
+      { "id": "search-google", "keyword": "g", "label": "Google", "urlTemplate": "https://www.google.com/search?q={query}", "openInNewTab": true },
+      { "id": "search-github", "keyword": "gh", "label": "GitHub", "urlTemplate": "https://github.com/search?q={query}", "openInNewTab": true },
+      { "id": "search-youtube", "keyword": "yt", "label": "YouTube", "urlTemplate": "https://www.youtube.com/results?search_query={query}", "openInNewTab": true }
+    ]
+  },
+  "theme": {
+    "mode": "dark",
+    "background": { "type": "gradient" },
+    "glass": { "opacity": 0.55, "blur": 18, "borderOpacity": 0.15 }
+  },
+  "tabs": [
+    {
+      "id": "home",
+      "label": "Home",
+      "icon": "lucide:house",
+      "sections": [
+        {
+          "id": "home-quick-access",
+          "title": "Quick access",
+          "width": "full",
+          "appearance": { "accent": "#a78bfa", "surface": "glass", "iconSize": 32 },
+          "layout": { "type": "tiles", "minCardWidth": 150, "gap": 12, "maxColumns": 6 },
+          "cards": [
+            { "id": "home-google", "type": "link", "label": "Google", "description": "Search the web", "url": "https://www.google.com", "openInNewTab": true, "icon": { "type": "iconify", "value": "logos:google-icon" } },
+            { "id": "home-github", "type": "link", "label": "GitHub", "description": "Code and projects", "url": "https://github.com", "openInNewTab": true, "icon": { "type": "iconify", "value": "mdi:github" } },
+            { "id": "home-chatgpt", "type": "link", "label": "ChatGPT", "description": "AI workspace", "url": "https://chatgpt.com", "openInNewTab": true, "icon": { "type": "iconify", "value": "simple-icons:openai" } },
+            { "id": "home-gmail", "type": "link", "label": "Gmail", "description": "Personal inbox", "url": "https://mail.google.com", "openInNewTab": true, "icon": { "type": "iconify", "value": "logos:google-gmail" } },
+            { "id": "home-calendar", "type": "link", "label": "Calendar", "description": "Schedule and events", "url": "https://calendar.google.com", "openInNewTab": true, "icon": { "type": "iconify", "value": "logos:google-calendar" } },
+            { "id": "home-maps", "type": "link", "label": "Maps", "description": "Places and directions", "url": "https://maps.google.com", "openInNewTab": true, "icon": { "type": "iconify", "value": "logos:google-maps" } }
+          ]
+        },
+        {
+          "id": "home-smart-home",
+          "title": "Smart home",
+          "width": "half",
+          "appearance": { "accent": "#2dd4bf", "surface": "flat" },
+          "layout": { "type": "grid", "minCardWidth": 220, "gap": 16, "maxColumns": 2 },
+          "cards": [
+            { "id": "home-assistant", "type": "link", "label": "Home Assistant", "aliases": ["ha", "hass"], "tags": ["home", "automation"], "description": "Smart home control center", "url": "https://home-assistant.io", "openInNewTab": true, "icon": { "type": "iconify", "value": "mdi:home-assistant" } },
+            { "id": "home-adguard", "type": "link", "label": "AdGuard Home", "description": "Network-wide ad blocking", "url": "https://adguard.com/adguard-home/overview.html", "openInNewTab": true, "icon": { "type": "iconify", "value": "simple-icons:adguard" } },
+            { "id": "home-esphome", "type": "link", "label": "ESPHome", "description": "Connected device management", "url": "https://esphome.io", "openInNewTab": true, "icon": { "type": "iconify", "value": "simple-icons:esphome" } },
+            { "id": "home-mqtt", "type": "link", "label": "MQTT Explorer", "description": "Inspect automation events", "url": "https://mqtt-explorer.com", "openInNewTab": true, "icon": { "type": "iconify", "value": "simple-icons:mqtt" } }
+          ]
+        },
+        {
+          "id": "home-personal-cloud",
+          "title": "Personal cloud",
+          "width": "half",
+          "appearance": { "accent": "#60a5fa", "surface": "minimal", "density": "compact" },
+          "layout": { "type": "list", "minCardWidth": 205, "gap": 8, "maxColumns": 5 },
+          "cards": [
+            { "id": "home-nextcloud", "type": "link", "label": "Nextcloud", "description": "Files and collaboration", "url": "https://nextcloud.com", "openInNewTab": true, "icon": { "type": "iconify", "value": "simple-icons:nextcloud" } },
+            { "id": "home-paperless", "type": "link", "label": "Paperless", "description": "Document archive", "url": "https://docs.paperless-ngx.com", "openInNewTab": true, "icon": { "type": "iconify", "value": "mdi:file-document-multiple-outline" } },
+            { "id": "home-immich", "type": "link", "label": "Immich", "description": "Private photo library", "url": "https://immich.app", "openInNewTab": true, "icon": { "type": "iconify", "value": "simple-icons:immich" } },
+            { "id": "home-vaultwarden", "type": "link", "label": "Vaultwarden", "description": "Password vault", "url": "https://github.com/dani-garcia/vaultwarden", "openInNewTab": true, "icon": { "type": "iconify", "value": "simple-icons:bitwarden" } },
+            { "id": "home-firefly", "type": "link", "label": "Firefly III", "description": "Personal finances", "url": "https://www.firefly-iii.org", "openInNewTab": true, "icon": { "type": "iconify", "value": "mdi:wallet-outline" } }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "infrastructure",
+      "label": "Infrastructure",
+      "icon": "lucide:server",
+      "sections": [
+        {
+          "id": "infra-compute-storage",
+          "title": "Compute and storage",
+          "layout": { "type": "grid", "minCardWidth": 250, "gap": 24, "maxColumns": 4 },
+          "cards": [
+            { "id": "infra-proxmox", "type": "link", "label": "Proxmox", "description": "Virtual environment", "url": "https://www.proxmox.com", "openInNewTab": true, "icon": { "type": "iconify", "value": "simple-icons:proxmox" } },
+            { "id": "infra-portainer", "type": "link", "label": "Portainer", "description": "Container management", "url": "https://www.portainer.io", "openInNewTab": true, "icon": { "type": "iconify", "value": "simple-icons:portainer" } },
+            { "id": "infra-truenas", "type": "link", "label": "TrueNAS", "description": "Storage management", "url": "https://www.truenas.com", "openInNewTab": true, "icon": { "type": "iconify", "value": "simple-icons:truenas" } },
+            { "id": "infra-docker", "type": "link", "label": "Docker", "description": "Containers and documentation", "url": "https://docs.docker.com", "openInNewTab": true, "icon": { "type": "iconify", "value": "logos:docker-icon" } }
+          ]
+        },
+        {
+          "id": "infra-observability",
+          "title": "Observability",
+          "layout": { "type": "grid", "minCardWidth": 175, "gap": 12, "maxColumns": 6 },
+          "cards": [
+            { "id": "infra-grafana", "type": "link", "label": "Grafana", "description": "Metrics dashboards", "url": "https://grafana.com", "openInNewTab": true, "icon": { "type": "iconify", "value": "simple-icons:grafana" } },
+            { "id": "infra-prometheus", "type": "link", "label": "Prometheus", "description": "Metrics collection", "url": "https://prometheus.io", "openInNewTab": true, "icon": { "type": "iconify", "value": "simple-icons:prometheus" } },
+            { "id": "infra-uptime-kuma", "type": "link", "label": "Uptime Kuma", "description": "Service availability", "url": "https://uptime.kuma.pet", "openInNewTab": true, "icon": { "type": "iconify", "value": "simple-icons:uptimekuma" } },
+            { "id": "infra-netdata", "type": "link", "label": "Netdata", "description": "Real-time monitoring", "url": "https://www.netdata.cloud", "openInNewTab": true, "icon": { "type": "iconify", "value": "simple-icons:netdata" } },
+            { "id": "infra-loki", "type": "link", "label": "Loki", "description": "Log aggregation", "url": "https://grafana.com/oss/loki/", "openInNewTab": true, "icon": { "type": "iconify", "value": "mdi:text-box-search-outline" } },
+            { "id": "infra-beszel", "type": "link", "label": "Beszel", "description": "Lightweight monitoring", "url": "https://beszel.dev", "openInNewTab": true, "icon": { "type": "iconify", "value": "lucide:activity" } }
+          ]
+        },
+        {
+          "id": "infra-network",
+          "title": "Network and access",
+          "layout": { "type": "grid", "minCardWidth": 280, "gap": 20, "maxColumns": 3 },
+          "cards": [
+            { "id": "infra-unifi", "type": "link", "label": "UniFi", "description": "Network controller", "url": "https://ui.com", "openInNewTab": true, "icon": { "type": "iconify", "value": "simple-icons:ubiquiti" } },
+            { "id": "infra-tailscale", "type": "link", "label": "Tailscale", "description": "Private mesh network", "url": "https://login.tailscale.com/admin", "openInNewTab": true, "icon": { "type": "iconify", "value": "simple-icons:tailscale" } },
+            { "id": "infra-cloudflare", "type": "link", "label": "Cloudflare", "description": "DNS, tunnels, and security", "url": "https://dash.cloudflare.com", "openInNewTab": true, "icon": { "type": "iconify", "value": "logos:cloudflare-icon" } },
+            { "id": "infra-speedtest", "type": "link", "label": "Speedtest", "description": "Internet connection check", "url": "https://www.speedtest.net", "openInNewTab": true, "icon": { "type": "iconify", "value": "mdi:speedometer" } }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "productivity",
+      "label": "Productivity",
+      "icon": "lucide:briefcase-business",
+      "sections": [
+        {
+          "id": "productivity-workspaces",
+          "title": "Workspaces",
+          "layout": { "type": "grid", "minCardWidth": 210, "gap": 16, "maxColumns": 5 },
+          "cards": [
+            { "id": "productivity-notion", "type": "link", "label": "Notion", "description": "Notes and knowledge", "url": "https://www.notion.so", "openInNewTab": true, "icon": { "type": "iconify", "value": "simple-icons:notion" } },
+            { "id": "productivity-linear", "type": "link", "label": "Linear", "description": "Product planning", "url": "https://linear.app", "openInNewTab": true, "icon": { "type": "iconify", "value": "simple-icons:linear" } },
+            { "id": "productivity-figma", "type": "link", "label": "Figma", "description": "Design workspace", "url": "https://www.figma.com", "openInNewTab": true, "icon": { "type": "iconify", "value": "logos:figma" } },
+            { "id": "productivity-slack", "type": "link", "label": "Slack", "description": "Team communication", "url": "https://app.slack.com", "openInNewTab": true, "icon": { "type": "iconify", "value": "logos:slack-icon" } },
+            { "id": "productivity-excalidraw", "type": "link", "label": "Excalidraw", "description": "Collaborative whiteboard", "url": "https://excalidraw.com", "openInNewTab": true, "icon": { "type": "iconify", "value": "simple-icons:excalidraw" } }
+          ]
+        },
+        {
+          "id": "productivity-development",
+          "title": "Development",
+          "layout": { "type": "grid", "minCardWidth": 185, "gap": 14, "maxColumns": 6 },
+          "cards": [
+            { "id": "productivity-gitlab", "type": "link", "label": "GitLab", "description": "Source and CI/CD", "url": "https://gitlab.com", "openInNewTab": true, "icon": { "type": "iconify", "value": "logos:gitlab" } },
+            { "id": "productivity-vscode", "type": "link", "label": "VS Code", "description": "Editor documentation", "url": "https://code.visualstudio.com/docs", "openInNewTab": true, "icon": { "type": "iconify", "value": "logos:visual-studio-code" } },
+            { "id": "productivity-mdn", "type": "link", "label": "MDN", "description": "Web platform reference", "url": "https://developer.mozilla.org", "openInNewTab": true, "icon": { "type": "iconify", "value": "simple-icons:mdnwebdocs" } },
+            { "id": "productivity-stackoverflow", "type": "link", "label": "Stack Overflow", "description": "Developer questions", "url": "https://stackoverflow.com", "openInNewTab": true, "icon": { "type": "iconify", "value": "logos:stackoverflow-icon" } },
+            { "id": "productivity-npm", "type": "link", "label": "npm", "description": "JavaScript packages", "url": "https://www.npmjs.com", "openInNewTab": true, "icon": { "type": "iconify", "value": "logos:npm-icon" } },
+            { "id": "productivity-dockerhub", "type": "link", "label": "Docker Hub", "description": "Container images", "url": "https://hub.docker.com", "openInNewTab": true, "icon": { "type": "iconify", "value": "logos:docker-icon" } }
+          ]
+        },
+        {
+          "id": "productivity-automation",
+          "title": "Automation and tools",
+          "layout": { "type": "grid", "minCardWidth": 260, "gap": 22, "maxColumns": 4 },
+          "cards": [
+            { "id": "productivity-n8n", "type": "link", "label": "n8n", "description": "Workflow automation", "url": "https://n8n.io", "openInNewTab": true, "icon": { "type": "iconify", "value": "simple-icons:n8n" } },
+            { "id": "productivity-zapier", "type": "link", "label": "Zapier", "description": "Connected app workflows", "url": "https://zapier.com", "openInNewTab": true, "icon": { "type": "iconify", "value": "simple-icons:zapier" } },
+            { "id": "productivity-postman", "type": "link", "label": "Postman", "description": "API development", "url": "https://www.postman.com", "openInNewTab": true, "icon": { "type": "iconify", "value": "logos:postman-icon" } },
+            { "id": "productivity-crontab", "type": "link", "label": "Crontab Guru", "description": "Cron schedule helper", "url": "https://crontab.guru", "openInNewTab": true, "icon": { "type": "iconify", "value": "lucide:clock-3" } }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "media",
+      "label": "Media",
+      "icon": "lucide:play-circle",
+      "sections": [
+        {
+          "id": "media-libraries",
+          "title": "Libraries",
+          "layout": { "type": "grid", "minCardWidth": 230, "gap": 18, "maxColumns": 4 },
+          "cards": [
+            { "id": "media-jellyfin", "type": "link", "label": "Jellyfin", "description": "Movies and television", "url": "https://jellyfin.org", "openInNewTab": true, "icon": { "type": "iconify", "value": "simple-icons:jellyfin" } },
+            { "id": "media-plex", "type": "link", "label": "Plex", "description": "Personal media server", "url": "https://app.plex.tv", "openInNewTab": true, "icon": { "type": "iconify", "value": "simple-icons:plex" } },
+            { "id": "media-navidrome", "type": "link", "label": "Navidrome", "description": "Personal music library", "url": "https://www.navidrome.org", "openInNewTab": true, "icon": { "type": "iconify", "value": "mdi:music-circle" } },
+            { "id": "media-audiobookshelf", "type": "link", "label": "Audiobookshelf", "description": "Audiobooks and podcasts", "url": "https://www.audiobookshelf.org", "openInNewTab": true, "icon": { "type": "iconify", "value": "mdi:book-music-outline" } }
+          ]
+        },
+        {
+          "id": "media-automation",
+          "title": "Library automation",
+          "layout": { "type": "grid", "minCardWidth": 170, "gap": 12, "maxColumns": 6 },
+          "cards": [
+            { "id": "media-sonarr", "type": "link", "label": "Sonarr", "description": "Television library", "url": "https://sonarr.tv", "openInNewTab": true, "icon": { "type": "iconify", "value": "simple-icons:sonarr" } },
+            { "id": "media-radarr", "type": "link", "label": "Radarr", "description": "Movie library", "url": "https://radarr.video", "openInNewTab": true, "icon": { "type": "iconify", "value": "simple-icons:radarr" } },
+            { "id": "media-lidarr", "type": "link", "label": "Lidarr", "description": "Music library", "url": "https://lidarr.audio", "openInNewTab": true, "icon": { "type": "iconify", "value": "mdi:music-note-plus" } },
+            { "id": "media-prowlarr", "type": "link", "label": "Prowlarr", "description": "Indexer management", "url": "https://prowlarr.com", "openInNewTab": true, "icon": { "type": "iconify", "value": "mdi:radar" } },
+            { "id": "media-qbittorrent", "type": "link", "label": "qBittorrent", "description": "Download client", "url": "https://www.qbittorrent.org", "openInNewTab": true, "icon": { "type": "iconify", "value": "simple-icons:qbittorrent" } },
+            { "id": "media-bazarr", "type": "link", "label": "Bazarr", "description": "Subtitle management", "url": "https://www.bazarr.media", "openInNewTab": true, "icon": { "type": "iconify", "value": "mdi:subtitles-outline" } }
+          ]
+        },
+        {
+          "id": "media-discovery",
+          "title": "Discover",
+          "layout": { "type": "grid", "minCardWidth": 300, "gap": 24, "maxColumns": 3 },
+          "cards": [
+            { "id": "media-imdb", "type": "link", "label": "IMDb", "description": "Movies, television, and cast", "url": "https://www.imdb.com", "openInNewTab": true, "icon": { "type": "iconify", "value": "simple-icons:imdb" } },
+            { "id": "media-letterboxd", "type": "link", "label": "Letterboxd", "description": "Film discovery and reviews", "url": "https://letterboxd.com", "openInNewTab": true, "icon": { "type": "iconify", "value": "simple-icons:letterboxd" } },
+            { "id": "media-tmdb", "type": "link", "label": "TMDB", "description": "Community media database", "url": "https://www.themoviedb.org", "openInNewTab": true, "icon": { "type": "iconify", "value": "simple-icons:themoviedatabase" } }
+          ]
+        }
+      ]
+    }
+  ]
+}

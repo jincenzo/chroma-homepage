@@ -1,0 +1,186 @@
+# Architecture
+
+## Data model
+
+Each homepage profile is one versioned JSON document: `Homepage → Tabs → Sections → Cards`. Every tab, section, and card has a stable ID; newly created entities use UUIDs. `src/shared/config.ts` owns the TypeScript types and Zod schemas used by both browser and server. The document starts at `schemaVersion: 1`.
+
+Browser-side IDs use `src/shared/id.ts`: native `crypto.randomUUID` when available,
+otherwise UUID v4 generated with `crypto.getRandomValues`. This keeps editing and
+history imports working on HTTP LAN origins, where `randomUUID` is unavailable.
+
+`src/shared/migrations.ts` is the migration boundary. Loading always passes through `migrateConfig`, which applies sequential version migrations and then validates the current schema. Version 1 needs no migration yet, but the version-indexed registry and future-version rejection behavior are already in place.
+
+## Frontend architecture
+
+The frontend treats configuration as data, not component-local setup. `App` loads the document and switches between the persisted view and an editor draft. `Dashboard` owns the high-level drag context, tab navigation, animated tab canvas, and section composition. Small renderers handle visual icons, cards, layouts, the editor toolbar, and the property Inspector.
+
+The compact header combines the product mark, homepage title, Google search, clock,
+edit action and profile menu on one desktop/tablet row. Mobile can wrap the search.
+`public/chroma.svg` is the original vector product mark used in the header and favicon.
+
+Zustand stores the persisted document, draft, active tab, selection, clipboard, history, and future snapshots. Pure manipulation functions live in `src/shared/operations.ts`, keeping mutation rules independently testable.
+
+## Backend and persistence
+
+Fastify serves the API and the production Vite bundle. `ConfigRepository` initializes `/data/config.json` from `config/default-config.json`, validates on every read/write, and provides atomic saves:
+
+1. validate the complete input document;
+2. write formatted JSON to a unique temporary file beside the destination document;
+3. copy the previous file to the profile's backup directory;
+4. rename the temporary file to the destination atomically, cleaning temporary files on failure.
+
+Uploaded images are stored in `/data/assets` under UUID filenames and referenced by ID in JSON. No binary or Base64 data enters the configuration document.
+
+### Homepage profiles
+
+`ProfileRepository` lists and creates independent documents. The reserved `default`
+profile maps to the existing `/data/config.json`; new UUID profiles map to
+`/data/profiles/<uuid>.json`. No existing data is rewritten on adoption. Names are
+derived from `homepage.title`, avoiding a second manifest that could diverge from
+the documents. Copies preserve entity IDs within their independent document scopes
+and share asset references. Empty profiles start with a new UUID tab and section.
+
+Optional `homepage.icon` uses the existing Iconify/asset-reference union for the
+profile avatar. Profile listings include this field, and creation may specify an
+avatar or inherit the source profile's avatar. No schema-version bump or rewrite
+is required for older documents. The circular `ProfileSelector` trigger shows only
+the active avatar; its keyboard-accessible menu lists profiles and ends with the
+creation action. `ProfileIconEditor` reuses the icon picker and asset upload path
+both during creation and in the Inspector. Draft avatars preview in the header;
+the saved profile summary is refreshed after Save, and Cancel restores the old avatar.
+
+The `/api/profiles/:id/config` routes use the same validation, migrations and atomic
+writer as the original API. Strict ID validation prevents arbitrary filesystem paths;
+unknown profiles return 404 rather than being silently created by PUT. Original backups
+stay at `/data/backups`, while new profile backups use `/data/backups/<uuid>/` and unique
+filenames. `/api/config` remains an alias for the original profile, never a server-global
+active profile. Assets and metadata discovery are shared across profiles.
+
+`useProfiles` owns the profile list, browser-local selection, and serialized loading or
+creation requests. A failed switch leaves the loaded document and selection intact.
+`App` captures an explicit profile ID for each save. Switching is disabled during editing
+and pending requests; saves temporarily disable editor interactions. Loading a new profile
+resets the editor store and remounts the dashboard/launcher to clear transient drag/search
+state. Async imports from an unmounted editor are ignored. JSON imports replace only the
+active draft, so other profiles cannot be overwritten through the import workflow.
+
+Profiles do not provide authentication or tenant isolation; all users of the server can
+access all profile endpoints. The HistoryOut importer appends to the selected profile's
+draft without modifying other profiles or replacing existing content.
+
+### HistoryOut import
+
+`shared/history-import.ts` validates records and ranks sanitized origin-level summaries.
+Only HTTP(S) URLs without credentials are eligible. Page keys stay inside the analysis
+worker; duplicate page counts use a maximum before totals are grouped by origin. Query
+tracking variants and fragments are normalized for scoring. Only clean root titles or
+hostname fallbacks appear in the suggestions. Locale-dependent export dates are not
+parsed or persisted. Limits bound input size, record count, selection, and DOM rows.
+
+`history-import.worker.ts` parses and analyzes the file off the UI thread and returns
+only site roots, labels, scores and counts. No raw export is posted to any server.
+`HistoryImporter` is a native modal review dialog with selection, duplicate exclusion,
+editable names, pagination, destination and layout controls. Optional metadata discovery
+uses two concurrent calls to the existing preview endpoint with approved roots only.
+Results are staged for review; failures retain safe fallbacks and user-edited labels win.
+
+`appendHistorySites` creates UUID cards/sections and optionally a tab without mutating
+its input. The full result is schema-validated and applied as one editor snapshot.
+The active profile's identity, existing content, inherited colors and other profiles
+are preserved. Global editor shortcuts are suspended while the dialog is open. A session
+identity check, worker termination, generation guards, and abort signals prevent late
+results from changing another draft. Persistence uses the normal profile-scoped Save;
+the import adds no backend route, database or persistent history store.
+
+### Link metadata discovery
+
+`POST /api/link-preview` retrieves an HTML page through a bounded HTTP(S) client.
+`remote-page.ts` validates every redirect, resolves and pins DNS addresses, applies
+an explicit opt-in for private networks, and excludes special/metadata addresses.
+Requests have a total deadline, response-size limits, and a small concurrency cap.
+`link-preview.ts` parses inert HTML, resolves favicon links against the final page
+URL and optional base URL, and imports supported raster/ICO bytes into the asset store.
+No page JavaScript, credentials, cookies, or external favicon service are used.
+
+`LinkUrlEditor` debounces URL edits, cancels obsolete requests, and verifies the
+current draft card/URL before applying a response. Untouched new-card placeholders
+can be filled automatically; existing details require explicit application. Detected
+metadata enters snapshot history as one edit and never saves the configuration by itself.
+
+## Card Registry
+
+`CardTypeRegistry` maps each card discriminator to a label, renderer, and Inspector editor. The shared Zod `cardSchema` is a discriminated union. Phase 1 registers only `link` cards.
+
+## Layout Registry
+
+`LayoutTypeRegistry` maps a layout discriminator to its responsive renderer and Inspector editor.
+`grid` renders horizontal cards, `tiles` renders centered icon tiles, and `list` renders
+compact rows. Grid and tile layouts share sizing options. The outer six-column section
+grid implements full, half, and third widths, with container breakpoints based on actual
+canvas space. Card and section sorting use a rectangular strategy.
+
+Optional `appearance` objects live on sections and cards. `resolveAppearance` combines
+baseline values, homepage/tab accents, section defaults, and card overrides; omitted properties inherit. CSS
+variables and data attributes apply the resolved values across all layouts. These additive
+schema-v1 fields remain compatible with old documents.
+
+`homepage.appearance.accent` and `tab.appearance.accent` are optional validated hex
+colors. Pure shared helpers resolve `app default → homepage → tab → section → card`,
+and both renderers and Inspector controls use these same helpers. Inherit deletes the
+local accent instead of copying a parent value, so later parent edits and card moves
+remain dynamic. Existing section/card overrides are preserved. Drag previews capture
+the source's resolved appearance; the destination re-resolves it after dropping.
+The app root exposes the homepage color through `--home-accent` for search/launcher
+highlights, while each card receives its effective `--card-accent`. Active tab icons
+and indicators use the tab's resolved color.
+
+`HomepageSettings` provides explicit name, avatar, default accent, and launcher controls
+in the Inspector. The profile menu offers direct access, and a back-to-settings button
+is available from each selected entity. All changes use the existing draft/history and
+profile-scoped save path, with no new configuration files or migration requirement.
+
+The launcher searches aliases and tags as well as existing card fields, with a bounded
+Damerau-Levenshtein comparison for spelling errors. `homepage.searchShortcuts` stores
+editable keyword/HTTP(S)-URL templates. Existing documents use shared Google/GitHub/YouTube
+defaults; an explicit empty array disables shortcuts. Query values are encoded before
+template substitution. No third-party search or service API is called.
+
+## Editor state
+
+Entering Edit mode deep-clones persisted configuration into a draft. Each meaningful edit stores the previous draft snapshot in a bounded history and clears the redo stack. Save validates and sends the draft to Fastify, then promotes the server response to persisted state. Cancel drops the draft. The clipboard is independent from the active tab so cards can be copied or cut in one tab and pasted in another.
+
+## Drag and drop design
+
+One dnd-kit `DndContext` wraps both tab headers and the dashboard canvas. Drag metadata identifies tabs, sections, and cards plus their parent IDs. Sections are explicit drop targets, while cards are sortable targets. A card drop invokes the same pure `moveCard` operation for same-section ordering, cross-section movement, and cross-tab movement.
+
+During card or section drag, hovering a non-active tab starts a 500 ms timer. The
+source identity is captured at drag start: dnd-kit can clear its live metadata when
+the old tab unmounts. The global context and overlay remain mounted. Pointer
+collision detection prioritizes tab headers, then cards, sections and the tab
+canvas, filtering out incompatible target types. Cancellation clears pending timers.
+
+All mutations happen on drop, as one history snapshot. Whole-section moves retain
+all IDs, contents and overrides. Empty tab canvases accept sections; dropping a card
+on an empty tab creates one section as part of the same undoable operation. Dropping
+a card directly on a populated tab header appends it to the first section. The
+Inspector also provides a section destination selector.
+
+## Automatic accent
+
+`Accent from icon` is available for cards, tabs and homepages with a selected icon.
+The browser renders the local asset or Iconify SVG into a small canvas and finds a
+saturated dominant color, ignoring transparent/neutral pixels. Dark colors are lifted
+for readability. Monochrome icons receive a deterministic suggested palette color,
+explicitly labeled as a suggestion. The resulting hex color is an ordinary draft
+override, with Undo/Redo, Inherit and Save; it is never recalculated during rendering.
+No image data is added to the configuration and no new backend service is involved.
+
+## Adding a card type
+
+1. Add its Zod schema and TypeScript type to the discriminated union in `src/shared/config.ts`.
+2. Create its view renderer and Inspector editor.
+3. Add one definition to `CardTypeRegistry`.
+4. Add a creation default or factory for the editor action that should create it.
+5. Add schema, renderer, operation, and end-to-end coverage appropriate to the new behavior.
+
+The dashboard, drag engine, clipboard, history, persistence, import/export, and selection model operate on the common card contract and should not need type-specific changes.
