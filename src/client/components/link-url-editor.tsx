@@ -14,7 +14,8 @@ function validUrl(value: string): boolean {
 }
 
 function currentCard(id: string): LinkCard | undefined {
-  return useEditorStore.getState().draft?.tabs.flatMap((tab) => tab.sections).flatMap((section) => section.cards).find((card) => card.id === id);
+  const card = useEditorStore.getState().draft?.tabs.flatMap((tab) => tab.sections).flatMap((section) => section.cards).find((card) => card.id === id);
+  return card?.type === "link" ? card : undefined;
 }
 
 function applyPreview(id: string, preview: LinkPreview, baseline?: LinkCard): boolean {
@@ -28,7 +29,7 @@ function applyPreview(id: string, preview: LinkPreview, baseline?: LinkCard): bo
   if (Object.keys(patch).length === 0) return false;
   useEditorStore.getState().updateDraft((draft) => {
     const target = draft.tabs.flatMap((tab) => tab.sections).flatMap((section) => section.cards).find((card) => card.id === id);
-    if (target?.url === preview.url) Object.assign(target, patch);
+    if (target?.type === "link" && target.url === preview.url) Object.assign(target, patch);
   });
   return true;
 }

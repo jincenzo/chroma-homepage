@@ -48,7 +48,7 @@ export function Inspector() {
       }}>{draft.tabs.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</Select></Field>
       <Field label="Title"><Input value={section.title} onChange={(event) => updateDraft((config) => { const target = config.tabs.find((item) => item.id === tab?.id)?.sections.find((item) => item.id === section.id); if (target) target.title = event.target.value; })} /></Field>
       <Field label="Section width"><Select value={section.width ?? "full"} onChange={(event) => updateSection({ width: event.target.value as Section["width"] })}>
-        <option value="full">Full width</option><option value="half">Half width</option><option value="third">One third</option>
+        <option value="full">Full width</option><option value="two-thirds">Two thirds</option><option value="half">Half width</option><option value="third">One third</option>
       </Select></Field>
       <div className="border-t border-white/8 pt-5"><h3 className="mb-4 text-sm font-semibold text-slate-200">Layout · {LayoutTypeRegistry[section.layout.type].label}</h3>{(() => { const Editor = LayoutTypeRegistry[section.layout.type].Editor; return <Editor layout={section.layout} onChange={(layout) => updateDraft((config) => { const target = config.tabs.find((item) => item.id === tab?.id)?.sections.find((item) => item.id === section.id); if (target) target.layout = layout; })} />; })()}</div>
       <AppearanceEditor inherited={resolveTabAppearance(tab, draft.homepage)} value={section.appearance} onChange={(appearance) => updateSection({ appearance })} />

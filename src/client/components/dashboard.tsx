@@ -34,8 +34,8 @@ function SortableTab({ tab, active, editing, accent }: { tab: Tab; active: boole
   const select = useEditorStore((state) => state.select);
   const { over, active: dragged } = useDndContext();
   const targeted = over?.id === `tab:${tab.id}` && dragged?.id !== `tab:${tab.id}`;
-  return <motion.button layout ref={setNodeRef} data-testid={`tab-${tab.id}`} aria-current={active ? "page" : undefined} style={{ transform: CSS.Transform.toString(transform), transition, touchAction: editing ? "none" : undefined }} {...(editing ? attributes : {})} {...(editing ? listeners : {})} type="button" onClick={() => { setActiveTab(tab.id); if (editing) select({ type: "tab", tabId: tab.id }); }} className={cn("relative flex h-11 shrink-0 items-center gap-2 rounded-xl px-4 text-sm font-medium transition", active ? "bg-white/12 text-white shadow-inner ring-1 ring-white/10" : "text-slate-400 hover:bg-white/6 hover:text-slate-200", editing && "cursor-grab active:cursor-grabbing", targeted && "ring-2 ring-emerald-400 bg-emerald-400/10", isDragging && "opacity-30")}>
-    <span style={{ color: active ? accent : undefined }}><VisualIcon icon={tab.icon} className="size-[18px]" /></span>{tab.label}{active && <motion.span layoutId="active-tab" style={{ backgroundColor: accent }} className="absolute inset-x-4 -bottom-2 h-px" />}
+  return <motion.button layout ref={setNodeRef} data-testid={`tab-${tab.id}`} aria-current={active ? "page" : undefined} style={{ transform: CSS.Transform.toString(transform), transition, touchAction: editing ? "none" : undefined }} {...(editing ? attributes : {})} {...(editing ? listeners : {})} type="button" onClick={() => { setActiveTab(tab.id); if (editing) select({ type: "tab", tabId: tab.id }); }} className={cn("dashboard-tab relative flex h-11 shrink-0 items-center gap-2 rounded-xl px-4 text-sm font-medium transition", active ? "bg-white/12 text-white shadow-inner ring-1 ring-white/10" : "text-slate-400 hover:bg-white/6 hover:text-slate-200", editing && "cursor-grab active:cursor-grabbing", targeted && "ring-2 ring-emerald-400 bg-emerald-400/10", isDragging && "opacity-30")}>
+    <span className="shrink-0" style={{ color: active ? accent : undefined }}><VisualIcon icon={tab.icon} className="size-[18px]" /></span><span className="truncate">{tab.label}</span>{active && <motion.span layoutId="active-tab" style={{ backgroundColor: accent }} className="active-tab-indicator absolute" />}
   </motion.button>;
 }
 
@@ -194,11 +194,14 @@ export function Dashboard({ config, editing }: { config: ChromaConfig; editing: 
     }
   };
 
-  const canvas = tab && <motion.main key={tab.id} initial={dragging ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: dragging ? 0 : 0.18 }} className="dashboard-canvas mx-auto mt-7 max-w-7xl"><TabCanvas tab={tab} editing={editing} dragging={dragging}><div className="section-grid"><SortableContext items={tab.sections.map((section) => `section:${section.id}`)} strategy={rectSortingStrategy}>{tab.sections.map((section) => <SortableSection key={section.id} section={section} tab={tab} homepage={config.homepage} editing={editing} />)}</SortableContext></div>{tab.sections.length === 0 && <div className="rounded-3xl border border-dashed border-white/10 py-16 text-center text-slate-500">This tab has no sections yet.</div>}</TabCanvas></motion.main>;
+  const tabPosition = config.homepage.tabPosition;
+  const canvas = tab && <motion.main key={tab.id} initial={dragging ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: dragging ? 0 : 0.18 }} className="dashboard-canvas dashboard-main"><TabCanvas tab={tab} editing={editing} dragging={dragging}><div className="section-grid"><SortableContext items={tab.sections.map((section) => `section:${section.id}`)} strategy={rectSortingStrategy}>{tab.sections.map((section) => <SortableSection key={section.id} section={section} tab={tab} homepage={config.homepage} editing={editing} />)}</SortableContext></div>{tab.sections.length === 0 && <div className="rounded-3xl border border-dashed border-white/10 py-16 text-center text-slate-500">This tab has no sections yet.</div>}</TabCanvas></motion.main>;
   return <DndContext sensors={sensors} collisionDetection={collisionDetection} onDragStart={start} onDragOver={over} onDragEnd={end} onDragCancel={resetDrag}>
-    <nav className="chroma-tabs mx-auto flex w-fit max-w-full items-center gap-1 overflow-x-auto rounded-2xl p-1.5" aria-label="Dashboard tabs"><SortableContext items={config.tabs.map((item) => `tab:${item.id}`)}>{config.tabs.map((item) => <SortableTab key={item.id} tab={item} active={item.id === tab?.id} editing={editing} accent={resolveTabAppearance(item, config.homepage).accent} />)}</SortableContext></nav>
-    {/* Keep exactly one canvas mounted: exit copies can duplicate sortable IDs after a move. */}
-    {canvas}
+    <div className="dashboard-shell" data-tab-position={tabPosition}>
+      <nav className="chroma-tabs dashboard-tabs" data-position={tabPosition} aria-label="Dashboard tabs"><SortableContext items={config.tabs.map((item) => `tab:${item.id}`)}>{config.tabs.map((item) => <SortableTab key={item.id} tab={item} active={item.id === tab?.id} editing={editing} accent={resolveTabAppearance(item, config.homepage).accent} />)}</SortableContext></nav>
+      {/* Keep exactly one canvas mounted: exit copies can duplicate sortable IDs after a move. */}
+      {canvas}
+    </div>
     <DragOverlay dropAnimation={null}>{draggedCard ? <CardOverlay {...draggedCard} /> : draggedSection ? <div data-testid="section-drag-overlay" className="w-64 rounded-2xl border border-violet-300/40 bg-[#171a28]/95 p-5 shadow-2xl"><p className="font-semibold text-white">{draggedSection.title}</p><p className="mt-2 text-sm text-slate-400">{draggedSection.cards.length} cards · Move section</p></div> : null}</DragOverlay>
   </DndContext>;
 }

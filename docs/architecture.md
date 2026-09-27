@@ -110,7 +110,27 @@ metadata enters snapshot history as one edit and never saves the configuration b
 
 ## Card Registry
 
-`CardTypeRegistry` maps each card discriminator to a label, renderer, and Inspector editor. The shared Zod `cardSchema` is a discriminated union. Phase 1 registers only `link` cards.
+`CardTypeRegistry` maps each card discriminator to a label, renderer, and Inspector editor. The shared Zod `cardSchema` is a discriminated union. Link cards and the Formula 1 next-race, championship-leaders, and favourite-driver views use the same layout, drag, clipboard, and appearance machinery.
+
+### Live data and secrets
+
+The Formula 1 card calls Chroma's `/api/widgets/formula-one/next-race` route, never a
+provider directly. When an API-Sports key is configured, the server first tries its fixed
+Formula 1 endpoint and adds the credential in an HTTP header. API-Sports free plans do not
+expose the current season or `next` query, so unavailable/rejected requests fall back to
+Jolpica's public current/next schedule. Both paths normalize into one response, bound time
+and response size, and share a 30-minute cache. The browser localizes the returned ISO
+timestamp and updates the countdown without spending another provider request.
+Current driver standings come from Jolpica's structured standings endpoint and share the
+same bounded-response and 30-minute caching policy.
+
+Integration credentials are deliberately separate from homepage documents. The UI can
+set, replace, delete, and inspect only a `configured` flag; no API returns a stored secret.
+`SecretRepository` encrypts its JSON payload using AES-256-GCM and atomically writes it
+with owner-only permissions. By default it creates an owner-only `/data/secrets.key`;
+deployments can instead supply `CHROMA_SECRET_KEY`, keeping the encryption key outside
+the data volume. Configuration exports, profile copies, backups, logs, and card objects
+therefore contain no provider key.
 
 ## Layout Registry
 

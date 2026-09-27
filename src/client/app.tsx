@@ -75,7 +75,7 @@ export function App() {
     </header>
     {visibleError && <div role="alert" className="fixed left-1/2 top-5 z-[100] -translate-x-1/2 rounded-xl border border-rose-400/30 bg-rose-950/90 px-4 py-2 text-sm text-rose-200 shadow-xl">{visibleError}</div>}
     <div inert={saving || profileState.loading} key={profileState.activeId}>
-    <div className="relative z-10 px-6 pb-28"><Dashboard config={config} editing={editMode} /></div>
+    <div className="dashboard-host relative z-10 px-6 pb-28"><Dashboard config={config} editing={editMode} /></div>
     <CardLauncher config={config} disabled={editMode || profileState.loading} />
     {editMode && <><Inspector /><EditorToolbar onSave={() => void save()} saving={saving} /></>}
     </div>

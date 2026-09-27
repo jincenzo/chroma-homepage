@@ -50,4 +50,12 @@ describe("editor history", () => {
     useEditorStore.getState().load(next);
     expect(useEditorStore.getState()).toMatchObject({ persisted: next, draft: null, editMode: false, clipboard: null, selection: null, history: [], future: [], activeTabId: next.homepage.defaultTabId });
   });
+
+  it("adds a Formula 1 card through the common card workflow", () => {
+    useEditorStore.getState().beginEdit();
+    useEditorStore.getState().addCard("formula-one");
+    const card = useEditorStore.getState().draft?.tabs[0].sections[0].cards.at(-1);
+    expect(card).toMatchObject({ type: "formula-one", view: "next-race", driverCount: 3, label: "Next F1 race", refreshMinutes: 60 });
+    expect(useEditorStore.getState().selection).toMatchObject({ type: "card", cardId: card?.id });
+  });
 });

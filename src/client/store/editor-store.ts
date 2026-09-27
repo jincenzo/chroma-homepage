@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { createId } from "../../shared/id";
 import type { Card, ChromaConfig } from "../../shared/config";
-import { copyCard, createLinkCard, createSection, createTab, duplicateCard, findCard, moveCard, moveSection, pasteCard, removeCard, reorderSections, reorderTabs } from "../../shared/operations";
+import { copyCard, createFormulaOneCard, createLinkCard, createSection, createTab, duplicateCard, findCard, moveCard, moveSection, pasteCard, removeCard, reorderSections, reorderTabs } from "../../shared/operations";
 
 export type Selection =
   | { type: "tab"; tabId: string }
@@ -29,7 +29,7 @@ interface EditorState {
   redo(): void;
   addTab(): void;
   addSection(): void;
-  addCard(): void;
+  addCard(type?: Card["type"]): void;
   deleteSelection(): void;
   copy(): void;
   cut(): void;
@@ -87,13 +87,13 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     state.updateDraft((draft) => { draft.tabs.find((tab) => tab.id === state.activeTabId)?.sections.push(section); });
     set({ selection: { type: "section", tabId: state.activeTabId, sectionId: section.id } });
   },
-  addCard: () => {
+  addCard: (type = "link") => {
     const state = get();
     if (!state.draft || !state.activeTabId) return;
     const tab = state.draft.tabs.find((item) => item.id === state.activeTabId);
     const selectedSectionId = state.selection?.type === "section" || state.selection?.type === "card" ? state.selection.sectionId : tab?.sections[0]?.id;
     if (!selectedSectionId) return;
-    const card = createLinkCard();
+    const card = type === "formula-one" ? createFormulaOneCard() : createLinkCard();
     state.updateDraft((draft) => { draft.tabs.find((item) => item.id === state.activeTabId)?.sections.find((item) => item.id === selectedSectionId)?.cards.push(card); });
     set({ selection: { type: "card", tabId: state.activeTabId, sectionId: selectedSectionId, cardId: card.id } });
   },

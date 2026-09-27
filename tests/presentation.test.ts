@@ -26,6 +26,8 @@ describe("presentation document", () => {
       section.appearance = { accent: "#fb7185", iconSize: 40, surface: "flat" };
       expect(configSchema.parse(JSON.parse(JSON.stringify(config)))).toEqual(config);
     }
+    section.width = "two-thirds";
+    expect(configSchema.parse(JSON.parse(JSON.stringify(config))).tabs[0].sections[0].width).toBe("two-thirds");
     section.appearance = { accent: "red", iconSize: 500 };
     expect(configSchema.safeParse(config).success).toBe(false);
   });

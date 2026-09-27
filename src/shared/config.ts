@@ -27,10 +27,20 @@ export const iconReferenceSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("asset"), assetId: z.string().uuid() })
 ]);
 
-export const linkCardSchema = z.object({
+const cardAppearanceFields = {
   id: z.string().min(1),
-  type: z.literal("link"),
   label: z.string().min(1).max(120),
+  icon: iconReferenceSchema,
+  bento: z.object({
+    width: z.number().int().min(1).max(12),
+    height: z.number().int().min(1).max(4)
+  }).optional(),
+  appearance: appearanceSchema.optional()
+};
+
+export const linkCardSchema = z.object({
+  ...cardAppearanceFields,
+  type: z.literal("link"),
   description: z.string().max(240).optional(),
   url: z.string().url().refine((value) => {
     try {
@@ -39,17 +49,20 @@ export const linkCardSchema = z.object({
     } catch { return false; }
   }, "Use an HTTP(S) URL without embedded credentials"),
   openInNewTab: z.boolean().default(true),
-  icon: iconReferenceSchema,
-  bento: z.object({
-    width: z.number().int().min(1).max(12),
-    height: z.number().int().min(1).max(4)
-  }).optional(),
-  appearance: appearanceSchema.optional(),
   aliases: z.array(z.string().trim().min(1).max(80)).max(30).optional(),
   tags: z.array(z.string().trim().min(1).max(80)).max(30).optional()
 });
 
-export const cardSchema = z.discriminatedUnion("type", [linkCardSchema]);
+export const formulaOneCardSchema = z.object({
+  ...cardAppearanceFields,
+  type: z.literal("formula-one"),
+  view: z.enum(["next-race", "driver-standings", "favorite-driver"]).default("next-race"),
+  driverId: z.string().trim().regex(/^[a-z0-9_-]+$/i).max(80).optional(),
+  driverCount: z.number().int().min(1).max(30).default(3),
+  refreshMinutes: z.number().int().min(30).max(1440).default(60)
+});
+
+export const cardSchema = z.discriminatedUnion("type", [linkCardSchema, formulaOneCardSchema]);
 
 export const gridLayoutSchema = z.object({
   type: z.literal("grid"),
@@ -73,7 +86,7 @@ export const sectionSchema = z.object({
   id: z.string().min(1),
   title: z.string().min(1).max(120),
   layout: layoutSchema,
-  width: z.enum(["full", "half", "third"]).optional(),
+  width: z.enum(["full", "two-thirds", "half", "third"]).optional(),
   appearance: appearanceSchema.optional(),
   cards: z.array(cardSchema)
 });
@@ -93,6 +106,7 @@ export const configSchema = z.object({
     icon: iconReferenceSchema.optional(),
     appearance: accentAppearanceSchema.optional(),
     defaultTabId: z.string().min(1),
+    tabPosition: z.enum(["top", "left", "right"]).default("top"),
     searchShortcuts: z.array(searchShortcutSchema).max(30).optional()
   }),
   theme: z.object({
@@ -133,6 +147,7 @@ export type IconReference = z.infer<typeof iconReferenceSchema>;
 export type Appearance = z.infer<typeof appearanceSchema>;
 export type SearchShortcut = z.infer<typeof searchShortcutSchema>;
 export type LinkCard = z.infer<typeof linkCardSchema>;
+export type FormulaOneCard = z.infer<typeof formulaOneCardSchema>;
 export type Card = z.infer<typeof cardSchema>;
 export type GridLayout = z.infer<typeof gridLayoutSchema>;
 export type Layout = z.infer<typeof layoutSchema>;

@@ -1,6 +1,7 @@
 import { parseConfig, type ChromaConfig } from "../../shared/config";
 import { linkPreviewSchema } from "../../shared/link-preview";
 import { profileSchema, profilesSchema, type CreateProfile } from "../../shared/profiles";
+import { formulaOneCredentialStatusSchema, formulaOneStandingsSchema, formulaOneWidgetSchema } from "../../shared/formula-one";
 
 const configUrl = (profileId: string) => `/api/profiles/${encodeURIComponent(profileId)}/config`;
 
@@ -54,4 +55,43 @@ export async function previewLink(url: string, allowLocalNetwork: boolean, signa
     throw new Error(message);
   }
   return linkPreviewSchema.parse(body);
+}
+
+async function errorMessage(response: Response, fallback: string): Promise<string> {
+  const body = await response.json().catch(() => ({})) as { error?: unknown };
+  return typeof body.error === "string" ? body.error : fallback;
+}
+
+export async function formulaOneCredentialStatus() {
+  const response = await fetch("/api/integrations/api-sports-formula-one", { cache: "no-store" });
+  if (!response.ok) throw new Error(await errorMessage(response, "Could not check the Formula 1 API key."));
+  return formulaOneCredentialStatusSchema.parse(await response.json());
+}
+
+export async function saveFormulaOneApiKey(apiKey: string) {
+  const response = await fetch("/api/integrations/api-sports-formula-one", {
+    method: "PUT",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ apiKey })
+  });
+  if (!response.ok) throw new Error(await errorMessage(response, "Could not save the Formula 1 API key."));
+  return formulaOneCredentialStatusSchema.parse(await response.json());
+}
+
+export async function deleteFormulaOneApiKey() {
+  const response = await fetch("/api/integrations/api-sports-formula-one", { method: "DELETE" });
+  if (!response.ok) throw new Error(await errorMessage(response, "Could not remove the Formula 1 API key."));
+  return formulaOneCredentialStatusSchema.parse(await response.json());
+}
+
+export async function loadNextFormulaOneRace(signal?: AbortSignal) {
+  const response = await fetch("/api/widgets/formula-one/next-race", { signal });
+  if (!response.ok) throw new Error(await errorMessage(response, "Could not load the next Formula 1 race."));
+  return formulaOneWidgetSchema.parse(await response.json());
+}
+
+export async function loadFormulaOneDriverStandings(signal?: AbortSignal) {
+  const response = await fetch("/api/widgets/formula-one/driver-standings", { signal });
+  if (!response.ok) throw new Error(await errorMessage(response, "Could not load the Formula 1 driver standings."));
+  return formulaOneStandingsSchema.parse(await response.json());
 }

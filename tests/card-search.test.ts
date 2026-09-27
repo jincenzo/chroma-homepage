@@ -6,6 +6,7 @@ describe("card search", () => {
   it("finds typos, transpositions, aliases, and tags across tabs", () => {
     const config = fixtureConfig();
     const card = config.tabs[0].sections[0].cards[0];
+    if (card.type !== "link") throw new Error("Expected a link fixture");
     card.label = "Home Assistant";
     card.aliases = ["ha"];
     card.tags = ["automation"];
@@ -29,7 +30,9 @@ describe("card search", () => {
   });
   it("matches labels, descriptions, locations, and URLs", () => {
     const config = fixtureConfig();
-    config.tabs[0].sections[0].cards[0].description = "Monitoring console";
+    const card = config.tabs[0].sections[0].cards[0];
+    if (card.type !== "link") throw new Error("Expected a link fixture");
+    card.description = "Monitoring console";
     expect(searchCards(config, "A")[0].card.id).toBe("card-a");
     expect(searchCards(config, "monitoring")[0].card.id).toBe("card-a");
     expect(searchCards(config, "section-a")).toHaveLength(0);

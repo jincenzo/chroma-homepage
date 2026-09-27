@@ -170,6 +170,32 @@ Profiles are configurations, not authenticated user accounts.
 
 No browser extension or continuous history synchronization is implemented.
 
+## 11. Remote JSON cards — Proposed
+
+- [ ] Add a generic Remote data card that periodically reads a configured HTTP(S) endpoint.
+- [ ] Define and publish a versioned `chroma-card/v1` JSON protocol and validation schema.
+- [ ] Support bounded presentation primitives such as status, metrics, progress, lists,
+  short text, and safe HTTP(S) actions; never accept remote HTML, CSS, or JavaScript.
+- [ ] Fetch through the Chroma server, with response-size and duration limits, redirect
+  validation, SSRF/DNS-rebinding protections, request deduplication, and shared caching.
+- [ ] Support `ETag`, `304`, `Cache-Control`/protocol TTL hints, retry backoff, and display
+  of the last valid response as stale when an endpoint temporarily fails.
+- [ ] Provide optional Bearer or `X-API-Key` authentication configured in the UI and
+  stored only in the encrypted server-side secret repository.
+- [ ] Keep endpoint credentials out of card JSON, exports, backups, browser responses,
+  logs, and Git; configuration stores only an opaque credential reference/status.
+- [ ] Make private-network access explicit per card while permanently blocking metadata,
+  link-local, multicast, unspecified, and reserved destinations.
+- [ ] Add a Test endpoint action with protocol-validation feedback, preview, last-success
+  timestamp, and cache/error state before saving the card.
+- [ ] Consider JSON Pointer field mapping for arbitrary non-Chroma JSON as a later,
+  separate feature; do not allow executable expressions or JavaScript mappings.
+
+The initial protocol should keep card identity, appearance, placement, and sizing under
+local Chroma control. Remote services provide validated data and semantic tones only.
+Suggested v1 limits are a 64 KB response, 5-second timeout, 30-second minimum refresh,
+six blocks, twelve metrics, twenty list rows, and two safe link actions.
+
 ## References
 
 - [Homepage layout and navigation settings](https://gethomepage.dev/configs/settings/)

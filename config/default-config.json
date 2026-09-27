@@ -3,6 +3,7 @@
   "homepage": {
     "title": "Chroma Homepage",
     "defaultTabId": "home",
+    "tabPosition": "top",
     "searchShortcuts": [
       { "id": "search-google", "keyword": "g", "label": "Google", "urlTemplate": "https://www.google.com/search?q={query}", "openInNewTab": true },
       { "id": "search-github", "keyword": "gh", "label": "GitHub", "urlTemplate": "https://github.com/search?q={query}", "openInNewTab": true },

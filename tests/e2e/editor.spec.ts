@@ -165,6 +165,46 @@ test("homepage settings edits existing identity and cascades accent through tab,
   expect(saved.tabs[0].appearance.accent).toBe("#112233");
 });
 
+test("places tab navigation in a persistent left or right rail outside the dashboard canvas", async ({ page, request }) => {
+  await request.put("http://127.0.0.1:3001/api/config", { data: fixtureConfig() });
+  await page.setViewportSize({ width: 1600, height: 900 });
+  await page.goto("/");
+  await page.getByTestId("profile-switcher").click();
+  await page.getByRole("menuitem", { name: "Homepage settings", exact: true }).click();
+  const navigation = page.getByRole("navigation", { name: "Dashboard tabs" });
+  const canvas = page.getByTestId("canvas-tab-a");
+  const position = page.getByRole("combobox", { name: "Tab navigation position" });
+
+  await position.selectOption("left");
+  await expect(navigation).toHaveAttribute("data-position", "left");
+  await expect.poll(async () => {
+    const nav = await navigation.boundingBox(), content = await canvas.boundingBox();
+    return Boolean(nav && content && nav.x + nav.width < content.x);
+  }).toBe(true);
+  await expect.poll(async () => {
+    const first = await page.getByTestId("tab-tab-a").boundingBox(), second = await page.getByTestId("tab-tab-b").boundingBox();
+    return Boolean(first && second && second.y > first.y + 20);
+  }).toBe(true);
+
+  await position.selectOption("right");
+  await expect(navigation).toHaveAttribute("data-position", "right");
+  await expect.poll(async () => {
+    const nav = await navigation.boundingBox(), content = await canvas.boundingBox();
+    return Boolean(nav && content && nav.x > content.x + content.width);
+  }).toBe(true);
+  await page.getByRole("button", { name: "Save", exact: true }).click();
+  await page.reload();
+  await expect(navigation).toHaveAttribute("data-position", "right");
+  const saved = await (await request.get("http://127.0.0.1:3001/api/config")).json();
+  expect(saved.homepage.tabPosition).toBe("right");
+
+  await page.setViewportSize({ width: 700, height: 900 });
+  await expect.poll(async () => {
+    const nav = await navigation.boundingBox(), content = await canvas.boundingBox();
+    return Boolean(nav && content && nav.y + nav.height < content.y);
+  }).toBe(true);
+});
+
 test("Inherit removes accent overrides, supports undo and follows homepage changes after reload", async ({ page, request }) => {
   const config = fixtureConfig();
   config.homepage.appearance = { accent: "#00aabb" };
@@ -323,7 +363,7 @@ test("persists section presentation and card overrides, with undo and cancel", a
   await page.getByRole("menuitem", { name: "Homepage settings", exact: true }).click();
   await page.getByRole("heading", { name: "Smart home", exact: true }).click();
   await page.getByRole("combobox", { name: "Presentation", exact: true }).selectOption("tiles");
-  await page.getByRole("combobox", { name: "Section width" }).selectOption("third");
+  await page.getByRole("combobox", { name: "Section width" }).selectOption("two-thirds");
   await page.getByRole("combobox", { name: "Surface", exact: true }).selectOption("flat");
   await page.getByLabel("Accent color").fill("#ff8800");
   const section = page.getByTestId("section-home-smart-home");
@@ -345,7 +385,7 @@ test("persists section presentation and card overrides, with undo and cancel", a
   await expect(card).toHaveAttribute("data-surface", "minimal");
   await expect(card).toHaveCSS("--card-accent", "#ff8800");
   await expect(card.locator(".chroma-link-description")).toBeHidden();
-  await expect(section).toHaveAttribute("data-width", "third");
+  await expect(section).toHaveAttribute("data-width", "two-thirds");
   const saved = await (await request.get("http://127.0.0.1:3001/api/config")).json();
   const savedSection = saved.tabs[0].sections.find((item: { id: string }) => item.id === "home-smart-home");
   expect(savedSection.cards[0].aliases).toEqual(["ha", "smart house"]);

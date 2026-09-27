@@ -42,7 +42,7 @@ export function searchCards(config: ChromaConfig, query: string, limit = 8): Car
   const term = tagOnly ? normalized.slice(1) : normalized;
 
   return config.tabs
-    .flatMap((tab) => tab.sections.flatMap((section) => section.cards.map((card) => {
+    .flatMap((tab) => tab.sections.flatMap((section) => section.cards.filter((card): card is LinkCard => card.type === "link").map((card) => {
       const label = normalize(card.label);
       const description = normalize(card.description ?? "");
       const location = normalize(`${tab.label} ${section.title}`);

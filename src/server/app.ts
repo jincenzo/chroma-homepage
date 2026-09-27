@@ -11,6 +11,9 @@ import { linkPreviewRequestSchema } from "../shared/link-preview";
 import { discoverLink } from "./link-preview";
 import { PreviewError } from "./remote-page";
 import { ProfileRepository } from "./profiles";
+import { formulaOneCredentialSchema } from "../shared/formula-one";
+import { FormulaOneError, FormulaOneService } from "./formula-one";
+import { SecretRepository } from "./secrets";
 
 const mimeExtensions: Record<string, string> = {
   "image/png": ".png",
@@ -21,13 +24,16 @@ const mimeExtensions: Record<string, string> = {
   "image/x-icon": ".ico"
 };
 
-export interface AppOptions { dataPath: string; defaultConfigPath: string; clientPath?: string }
+export interface AppOptions { dataPath: string; defaultConfigPath: string; clientPath?: string; secretKey?: string; fetchFormulaOne?: typeof fetch }
 
 export async function createApp(options: AppOptions) {
   const app = Fastify({ logger: true });
   const repository = new ConfigRepository(options.dataPath, options.defaultConfigPath);
   await repository.initialize();
   const profiles = new ProfileRepository(options.dataPath, options.defaultConfigPath);
+  const secrets = new SecretRepository(options.dataPath, options.secretKey ?? process.env.CHROMA_SECRET_KEY);
+  await secrets.initialize();
+  const formulaOne = new FormulaOneService(secrets, options.fetchFormulaOne);
   await app.register(multipart, { limits: { fileSize: 5 * 1024 * 1024, files: 1 } });
 
   app.setErrorHandler((error, _request, reply) => {
@@ -46,6 +52,32 @@ export async function createApp(options: AppOptions) {
   });
 
   app.get("/api/config", async () => repository.read());
+  app.get("/api/integrations/api-sports-formula-one", async (_request, reply) => {
+    return reply.header("Cache-Control", "no-store").send({ configured: await formulaOne.configured() });
+  });
+  app.put("/api/integrations/api-sports-formula-one", { bodyLimit: 2048 }, async (request, reply) => {
+    const credential = formulaOneCredentialSchema.parse(request.body);
+    await formulaOne.setApiKey(credential.apiKey);
+    return reply.header("Cache-Control", "no-store").send({ configured: true });
+  });
+  app.delete("/api/integrations/api-sports-formula-one", async (_request, reply) => {
+    await formulaOne.deleteApiKey();
+    return reply.header("Cache-Control", "no-store").send({ configured: false });
+  });
+  app.get("/api/widgets/formula-one/next-race", async (_request, reply) => {
+    try { return await formulaOne.nextRace(); }
+    catch (error) {
+      if (error instanceof FormulaOneError) return reply.code(error.statusCode).send({ error: error.message });
+      throw error;
+    }
+  });
+  app.get("/api/widgets/formula-one/driver-standings", async (_request, reply) => {
+    try { return await formulaOne.driverStandings(); }
+    catch (error) {
+      if (error instanceof FormulaOneError) return reply.code(error.statusCode).send({ error: error.message });
+      throw error;
+    }
+  });
   let pendingPreviews = 0;
   app.post("/api/link-preview", { bodyLimit: 4096 }, async (request, reply) => {
     const parsed = linkPreviewRequestSchema.safeParse(request.body);

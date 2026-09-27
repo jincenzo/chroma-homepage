@@ -34,6 +34,7 @@ colors in the Inspector. Nothing is persisted until you **Save**.
 | **Drag across tabs** — move cards or whole sections | **Independent profiles** — separate homepages on the same server |
 | **Inherited styling** — homepage → tab → section → card | **Safe editing workflow** — validation, atomic writes, previous-version backups |
 | **Icons and images** — Iconify search, uploads, accent extraction | **Fast access** — type-to-search launcher, aliases, tags, web shortcuts |
+| **Live cards** — API-backed widgets with server-side caching | **Protected credentials** — encrypted at rest and excluded from config exports |
 
 ![The Chroma visual editor showing the Style studio layouts and section Inspector](docs/screenshots/editor.png)
 
@@ -124,6 +125,8 @@ asset directory. They are separate dashboards, **not separate user accounts**.
 ├── config.json               # Default homepage
 ├── profiles/<uuid>.json      # Additional homepages
 ├── assets/                   # Uploaded and discovered images
+├── secrets.json              # Encrypted integration credentials
+├── secrets.key               # Local encryption key (owner-only)
 └── backups/                  # Previous configuration versions
 ```
 
@@ -131,8 +134,10 @@ Each document describes **Homepage → Tabs → Sections → Cards**. Saves are 
 on the server and written atomically as two-space-indented JSON. Images are stored
 as files, never embedded as Base64 in the document.
 
-Import/export handles configuration JSON. To move images too, copy the whole data
-directory. Private runtime data is deliberately excluded from this source repository.
+Import/export handles configuration JSON and never includes API credentials. To move
+images too, copy the whole data directory. Private runtime data is deliberately excluded
+from this source repository. For stronger separation, set `CHROMA_SECRET_KEY` to 32 random
+bytes encoded as 64 hex characters or Base64; see `.env.example`.
 
 ## Development
 
@@ -167,8 +172,8 @@ instructions are in [docs/screenshots/README.md](docs/screenshots/README.md).
 ## Current scope
 
 Chroma is an early, single-user/trusted-network project. This version focuses on
-link cards and the visual editor. Authentication, multi-user permissions, live
-API widgets, weather, calendars, and service monitoring are not implemented.
+link cards, a Formula 1 next-race card, and the visual editor. Authentication,
+multi-user permissions, weather, calendars, and service monitoring are not implemented.
 Automatic backups do not yet have a retention policy or a restore UI.
 
 ## Buy me a coffee

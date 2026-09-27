@@ -8,6 +8,7 @@ Phase 1 includes:
 - visual editing with a draft, Save/Cancel, undo/redo, and keyboard shortcuts;
 - independent homepage profiles with a top-bar selector, blank creation, and copying;
 - tab, section, and link-card creation, editing, deletion, and reordering;
+- an API-backed Formula 1 next-race card with encrypted server-side credentials;
 - cross-section and cross-tab card drag and drop, including delayed tab activation;
 - an in-app card clipboard with copy, cut, paste, duplicate, and delete;
 - Iconify search and custom image uploads;
@@ -32,11 +33,38 @@ The Compose file uses the `chroma-data` named volume mounted at `/data`. To use 
 /data/config.json
 /data/profiles/<profile-uuid>.json
 /data/assets/
+/data/secrets.json
+/data/secrets.key
 /data/backups/
 /data/backups/<profile-uuid>/
 ```
 
 `config.json` is written with two-space indentation and a trailing newline. Every save first validates the full document, writes a temporary file, copies the previous configuration into `backups`, and atomically renames the temporary file.
+
+`secrets.json` is a separate AES-256-GCM encrypted credential store. Its API never
+returns plaintext values. The owner-only `secrets.key` is generated automatically; set
+`CHROMA_SECRET_KEY` to a 32-byte hex or Base64 key if you want the encryption key kept
+outside the data volume. Back up that external key separately or the encrypted credentials
+cannot be recovered. Neither configuration export nor profile copying includes secrets.
+
+## Formula 1 next-race card
+
+Enter Edit Mode, select a destination section, and click **F1** in the bottom toolbar.
+The card works immediately through Jolpica's public current schedule. Optionally paste an
+API-Sports Formula 1 key into its Inspector; paid API-Sports access is preferred when it
+supports the next-race query, while free/restricted plans fall back automatically. Saving
+the key is immediate and independent of the homepage draft; press the main **Save** button
+to keep the card itself. The server credential is shared by Formula 1 cards in all profiles.
+
+The card displays the next Grand Prix, circuit and location, status, start time in the
+browser's timezone, and a live countdown. Browser refresh intervals are configurable from
+30 minutes to 6 hours. The server maintains a shared 30-minute cache, so multiple
+cards and viewers do not spend a provider request each. The card identifies the provider
+used. Provider access, quotas, availability, and terms remain controlled by each provider.
+
+Replacing or removing the key is available in the same Inspector panel. Removing it returns
+all Formula 1 cards to the public Jolpica schedule. Credentials never enter card JSON,
+configuration backups, exports, URLs, client storage, or provider error messages.
 
 ## Local development
 
@@ -160,8 +188,11 @@ only persisted when you Save.
 ## Layout and appearance
 
 Enter Edit Mode from **Profile avatar → Homepage settings**, then select a section heading.
+In Homepage settings, **Tab navigation position** keeps the selector across the top or
+moves it into a vertical rail to the left or right of the dashboard. Side rails return
+to a horizontal row when the available canvas width is too narrow.
 Choose **Horizontal cards**, **Icon tiles**, **Compact list**, or **Bento boxes**,
-and set its width to full, half, or one third. Sections collapse
+and set its width to full, two thirds, half, or one third. Sections collapse
 to a single column when the canvas is narrow, including when the Inspector is open.
 Grid maximum columns limit the column count without leaving unused page width.
 
@@ -248,6 +279,13 @@ local-network access is enabled.
 - `GET /api/assets/:id` serves an uploaded asset.
 - `POST /api/link-preview` accepts `{ url, allowLocalNetwork? }` and returns suggested
   title, description, and a local asset reference when an icon is available.
+- `GET|PUT|DELETE /api/integrations/api-sports-formula-one` checks, saves, or removes
+  the server-side API key. `GET` returns only `{ configured }`.
+- `GET /api/widgets/formula-one/next-race` returns normalized,
+  cached next-race data without exposing the provider credential.
+- `GET /api/widgets/formula-one/driver-standings` returns normalized, cached current
+  driver standings for the championship-leaders and favourite-driver card views.
+  Championship-leaders cards can display a configurable 1–30 drivers (three by default).
 
 See [docs/architecture.md](architecture.md) for implementation details and extension points.
 See [docs/improvements.md](improvements.md) for completed improvements and proposed next steps.

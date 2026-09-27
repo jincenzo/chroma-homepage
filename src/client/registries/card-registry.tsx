@@ -1,9 +1,10 @@
 import { type ComponentType, useState } from "react";
-import type { Card, LinkCard } from "../../shared/config";
+import type { Card, FormulaOneCard, LinkCard } from "../../shared/config";
 import { VisualIcon } from "../components/visual-icon";
 import { Field, Input } from "../components/ui";
 import { IconPicker } from "../components/icon-picker";
 import { LinkUrlEditor } from "../components/link-url-editor";
+import { FormulaOneCardEditor, FormulaOneCardView } from "../components/formula-one-card";
 
 interface CardViewProps { card: Card; editing: boolean }
 interface CardEditorProps { card: Card; onChange(card: Card): void }
@@ -55,7 +56,12 @@ function KeywordsInput({ value, onChange, placeholder }: { value: string[]; onCh
 }
 
 export const CardTypeRegistry: Record<Card["type"], CardDefinition> = {
-  link: { label: "Link", Renderer: LinkCardView, Editor: LinkCardEditor }
+  link: { label: "Link", Renderer: LinkCardView, Editor: LinkCardEditor },
+  "formula-one": {
+    label: "Formula 1 · Next race",
+    Renderer: ({ card }) => <FormulaOneCardView card={card as FormulaOneCard} />,
+    Editor: ({ card, onChange }) => <FormulaOneCardEditor card={card as FormulaOneCard} onChange={(updated) => onChange(updated)} />
+  }
 };
 
 export function CardRenderer({ card, editing }: CardViewProps) {

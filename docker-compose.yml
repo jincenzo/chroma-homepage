@@ -8,6 +8,7 @@ services:
     environment:
       PORT: 3000
       DATA_DIR: /data
+      CHROMA_SECRET_KEY: ${CHROMA_SECRET_KEY:-}
     volumes:
       - chroma-data:/data
 

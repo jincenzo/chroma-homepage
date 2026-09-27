@@ -8,6 +8,17 @@ describe("configuration schema", () => {
     expect(parseConfig(fixtureConfig()).tabs).toHaveLength(2);
   });
 
+  it("defaults legacy tab navigation to the top and accepts both side rails", () => {
+    const legacy = structuredClone(fixtureConfig()) as unknown as { homepage: Record<string, unknown> };
+    delete legacy.homepage.tabPosition;
+    expect(parseConfig(legacy).homepage.tabPosition).toBe("top");
+    for (const position of ["left", "right"] as const) {
+      const config = fixtureConfig();
+      config.homepage.tabPosition = position;
+      expect(parseConfig(config).homepage.tabPosition).toBe(position);
+    }
+  });
+
   it("rejects duplicate IDs and invalid default tabs", () => {
     const config = fixtureConfig();
     config.tabs[1].id = "tab-a";
@@ -20,9 +31,24 @@ describe("configuration schema", () => {
   it("rejects executable URLs and embedded credentials in imported link cards", () => {
     for (const url of ["javascript:alert(1)", "data:text/html,test", "file:///tmp/private", "https://user:password@example.com/"]) {
       const config = fixtureConfig();
-      config.tabs[0].sections[0].cards[0].url = url;
+      const card = config.tabs[0].sections[0].cards[0];
+      if (card.type !== "link") throw new Error("Expected a link fixture");
+      card.url = url;
       expect(configSchema.safeParse(config).success).toBe(false);
     }
+  });
+
+  it("accepts Formula 1 cards without allowing credentials into the document", () => {
+    const config = fixtureConfig();
+    config.tabs[0].sections[0].cards.push({
+      id: "f1-card", type: "formula-one", view: "next-race", driverCount: 3, label: "Next race", refreshMinutes: 60,
+      icon: { type: "iconify", value: "simple-icons:f1" }
+    });
+    const input = structuredClone(config) as unknown as { tabs: Array<{ sections: Array<{ cards: Array<Record<string, unknown>> }> }> };
+    input.tabs[0].sections[0].cards[1].apiKey = "must-not-survive";
+    const parsed = parseConfig(input);
+    expect(parsed.tabs[0].sections[0].cards[1]).toMatchObject({ type: "formula-one", view: "next-race", driverCount: 3, refreshMinutes: 60 });
+    expect(parsed.tabs[0].sections[0].cards[1]).not.toHaveProperty("apiKey");
   });
 });
 

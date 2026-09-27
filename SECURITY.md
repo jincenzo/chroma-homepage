@@ -20,6 +20,9 @@ This is an early release, not a formally audited security product.
 - Google search and launcher search shortcuts send queries to the chosen provider.
 - Link discovery makes unauthenticated HTTP(S) requests from the Chroma server to
   the supplied site. It does not forward your browser cookies or credentials.
+- Formula 1 cards make cached server-side requests to API-Sports and/or the public Jolpica
+  schedule. A configured API key is sent only to the fixed API-Sports Formula 1 host;
+  Jolpica receives no credential. Only normalized race data returns to browsers.
 - HistoryOut exports are parsed locally in a browser worker. Raw history, private
   paths, queries, timestamps, and visit scores are not sent to the server by the
   importer. Optional discovery sends selected site roots only.
@@ -41,6 +44,15 @@ This is an early release, not a formally audited security product.
   cloud metadata, multicast, and reserved destinations remain blocked.
 - There is no global rate limiting, storage quota, or malicious-file scanning. Do
   not accept uploads or configuration changes from untrusted users.
+- Integration credentials are stored separately from configuration and encrypted with
+  AES-256-GCM. Credential APIs reveal only whether a key exists. Files use owner-only
+  permissions, and keys are excluded from exports, configuration backups, logs, and Git. By default the
+  encryption key lives beside the ciphertext in the private data directory, which protects
+  against accidental disclosure but not full data-volume compromise. Set
+  `CHROMA_SECRET_KEY` from a secrets manager or protected environment for stronger separation.
+- Because Chroma has no authentication, anyone who can reach its API can replace/remove
+  integration credentials and consume configured provider quotas through widget routes.
+  The trusted-network/authenticated-gateway requirement applies to these routes too.
 
 ## Keeping a fork private where it matters
 

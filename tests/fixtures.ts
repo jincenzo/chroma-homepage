@@ -3,7 +3,7 @@ import type { ChromaConfig } from "../src/shared/config";
 export function fixtureConfig(): ChromaConfig {
   return {
     schemaVersion: 1,
-    homepage: { title: "Test", defaultTabId: "tab-a" },
+    homepage: { title: "Test", defaultTabId: "tab-a", tabPosition: "top" },
     theme: { mode: "dark", background: { type: "gradient" }, glass: { opacity: 0.5, blur: 18, borderOpacity: 0.15 } },
     tabs: [
       { id: "tab-a", label: "A", icon: "lucide:house", sections: [

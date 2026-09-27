@@ -40,7 +40,8 @@ export function EditorToolbar({ onSave, saving }: { onSave(): void; saving: bool
     <span className="mx-1 h-6 w-px bg-white/10" />
     <Button onClick={addTab}><Plus className="size-4" />Tab</Button>
     <Button onClick={addSection}><Plus className="size-4" />Section</Button>
-    <Button onClick={addCard} data-testid="add-card"><Plus className="size-4" />Link</Button>
+    <Button onClick={() => addCard("link")} data-testid="add-card"><Plus className="size-4" />Link</Button>
+    <Button onClick={() => addCard("formula-one")} data-testid="add-f1-card"><Plus className="size-4" />F1</Button>
     <span className="mx-1 h-6 w-px bg-white/10" />
     <Button onClick={exportConfig} aria-label="Export configuration" title="Export configuration" className="size-9 px-0"><Download className="size-4" /></Button>
     <Button aria-label="Import configuration" title="Import configuration" className="relative size-9 overflow-hidden px-0"><Upload className="size-4" /><input type="file" accept="application/json,.json" className="absolute inset-0 cursor-pointer opacity-0" onChange={(event) => void importConfig(event)} /></Button>

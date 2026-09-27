@@ -72,6 +72,7 @@ export function analyzeHistoryOut(input: unknown): HistoryAnalysis {
 
 export function existingHistorySites(config: ChromaConfig): Set<string> {
   return new Set(config.tabs.flatMap((tab) => tab.sections.flatMap((section) => section.cards.flatMap((card) => {
+    if (card.type !== "link") return [];
     const homepage = siteHomepage(card.url);
     return homepage ? [homepage] : [];
   }))));

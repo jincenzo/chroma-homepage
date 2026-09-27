@@ -22,7 +22,7 @@ export function createEmptyHomepage(name: string): ChromaConfig {
   tab.sections[0].title = "Links";
   return parseConfig({
     schemaVersion: 1,
-    homepage: { title: name, defaultTabId: tab.id },
+    homepage: { title: name, defaultTabId: tab.id, tabPosition: "top" },
     theme: {
       mode: "dark", background: { type: "gradient" },
       glass: { opacity: 0.55, blur: 18, borderOpacity: 0.15 }

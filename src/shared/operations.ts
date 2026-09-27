@@ -94,6 +94,10 @@ export function createLinkCard(): Card {
   return { id: createId(), type: "link", label: "New link", description: "", url: "https://example.com", openInNewTab: true, icon: { type: "iconify", value: "lucide:link" } };
 }
 
+export function createFormulaOneCard(): Card {
+  return { id: createId(), type: "formula-one", view: "next-race", driverCount: 3, label: "Next F1 race", refreshMinutes: 60, icon: { type: "iconify", value: "simple-icons:f1" }, bento: { width: 2, height: 1 }, appearance: { accent: "#e10600" } };
+}
+
 export function createSection(): Section {
   return { id: createId(), title: "New section", layout: { type: "grid", minCardWidth: 180, gap: 16 }, cards: [] };
 }
