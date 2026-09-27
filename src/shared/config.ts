@@ -40,6 +40,10 @@ export const linkCardSchema = z.object({
   }, "Use an HTTP(S) URL without embedded credentials"),
   openInNewTab: z.boolean().default(true),
   icon: iconReferenceSchema,
+  bento: z.object({
+    width: z.number().int().min(1).max(12),
+    height: z.number().int().min(1).max(4)
+  }).optional(),
   appearance: appearanceSchema.optional(),
   aliases: z.array(z.string().trim().min(1).max(80)).max(30).optional(),
   tags: z.array(z.string().trim().min(1).max(80)).max(30).optional()
@@ -57,7 +61,12 @@ export const gridLayoutSchema = z.object({
 export const layoutSchema = z.discriminatedUnion("type", [
   gridLayoutSchema,
   gridLayoutSchema.extend({ type: z.literal("tiles") }),
-  gridLayoutSchema.extend({ type: z.literal("list") })
+  gridLayoutSchema.extend({ type: z.literal("list") }),
+  gridLayoutSchema.extend({
+    type: z.literal("bento"),
+    columns: z.number().int().min(1).max(12).default(4),
+    rowHeight: z.number().int().min(120).max(320).default(160)
+  })
 ]);
 
 export const sectionSchema = z.object({

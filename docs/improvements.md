@@ -1,6 +1,6 @@
 # Chroma Homepage improvements
 
-Last updated: 2026-09-26.
+Last updated: 2026-09-27.
 
 This document tracks improvement areas discussed for Chroma Homepage,
 including delivered features and remaining ideas. Checked items are implemented;
@@ -20,7 +20,12 @@ cards, live widgets, and service integrations remain deferred.
 - [x] Presentation selection in the section Inspector.
 - [x] Layout examples in a separate Style studio demo tab on the development instance.
 
-Layouts are registered as `grid`, `tiles`, and `list`. Section width and layout
+- [x] Bento layout with responsive grid-unit box sizes and a dedicated visual studio.
+- [x] Per-box size presets and numeric width/height; section columns, row height and gap.
+- [x] Studio Apply/Cancel isolation, one-step Undo/Redo, and normal homepage Save.
+- [ ] Corner-drag resizing and manual box placement in the Bento studio.
+
+Layouts are registered as `grid`, `tiles`, `list`, and `bento`. Section width and layout
 settings are stored in the configuration document and participate in editor history.
 
 ## 2. Visual customization — Completed
@@ -31,7 +36,7 @@ settings are stored in the configuration document and participate in editor hist
 - [x] Dynamic accent inheritance with reset-to-parent and matching Inspector previews.
 - [x] Automatic accent extraction from images/colored icons, with explicit suggestions for monochrome icons.
 - [x] Original Chroma vector logo and favicon.
-- [x] Unified compact header with Google search, clock, profiles and edit action.
+- [x] Unified compact header with Google search, clock and profiles; editing lives in the profile menu.
 - [x] Per-card overrides and reset-to-inherit controls.
 - [x] Glass, Flat, and Minimal surface presets.
 - [x] Compact, Comfortable, and Spacious density settings.

@@ -15,7 +15,8 @@ history imports working on HTTP LAN origins, where `randomUUID` is unavailable.
 The frontend treats configuration as data, not component-local setup. `App` loads the document and switches between the persisted view and an editor draft. `Dashboard` owns the high-level drag context, tab navigation, animated tab canvas, and section composition. Small renderers handle visual icons, cards, layouts, the editor toolbar, and the property Inspector.
 
 The compact header combines the product mark, homepage title, Google search, clock,
-edit action and profile menu on one desktop/tablet row. Mobile can wrap the search.
+and profile menu on one desktop/tablet row. Editing is accessed through the profile
+menu's Homepage settings item. Mobile can wrap the search.
 `public/chroma.svg` is the original vector product mark used in the header and favicon.
 
 Zustand stores the persisted document, draft, active tab, selection, clipboard, history, and future snapshots. Pure manipulation functions live in `src/shared/operations.ts`, keeping mutation rules independently testable.
@@ -118,6 +119,21 @@ metadata enters snapshot history as one edit and never saves the configuration b
 compact rows. Grid and tile layouts share sizing options. The outer six-column section
 grid implements full, half, and third widths, with container breakpoints based on actual
 canvas space. Card and section sorting use a rectangular strategy.
+
+`bento` adds a responsive CSS grid with configured `columns` and `rowHeight` plus
+the common `minCardWidth` and `gap`. Optional `card.bento = { width, height }` stores
+box spans independently of placement; older cards default to 1×1. Shared schema
+validation bounds all dimensions. These additions remain schema-v1 compatible.
+`BentoGrid` observes its own width to reduce column count, and clamps rendered spans
+without mutating the document. Row auto-placement preserves document/focus order;
+no dense packing or absolute coordinates are used. Existing drag/drop controls
+ordering; moves, clipboard operations and layout changes preserve saved sizes.
+
+`BentoStudio` is a native modal with a local section snapshot, visual box selection,
+size presets and numeric controls. Apply validates and patches layout/sizes in one
+draft snapshot; Escape/Cancel discard local changes. Editor shortcuts are suspended
+while it is open. The standard Save API persists the result. `changeLayout` provides
+conversion defaults, including when the HistoryOut helper creates a section.
 
 Optional `appearance` objects live on sections and cards. `resolveAppearance` combines
 baseline values, homepage/tab accents, section defaults, and card overrides; omitted properties inherit. CSS

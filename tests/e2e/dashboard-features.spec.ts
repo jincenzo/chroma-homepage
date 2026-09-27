@@ -10,7 +10,7 @@ test.beforeEach(async ({ page, request }) => {
   await request.put(`http://127.0.0.1:3001/api/profiles/${profile.id}/config`, { data: config });
   await page.addInitScript((id: string) => localStorage.setItem("chroma.active-profile", id), profile.id);
   await page.goto("/");
-  await expect(page.getByTestId("edit-button")).toBeVisible();
+  await expect(page.getByTestId("profile-switcher")).toBeEnabled();
 });
 
 async function point(page: Page, target: Locator) {
@@ -33,7 +33,8 @@ async function savedConfig(page: Page): Promise<ChromaConfig> {
 }
 
 test("card drag survives hovering another tab and commits once with undo/redo", async ({ page }) => {
-  await page.getByTestId("edit-button").click();
+  await page.getByTestId("profile-switcher").click();
+  await page.getByRole("menuitem", { name: "Homepage settings", exact: true }).click();
   await startDrag(page, page.getByTestId("card-card-a"));
   await point(page, page.getByTestId("tab-tab-b"));
   await expect(page.getByTestId("tab-tab-b")).toHaveAttribute("aria-current", "page");
@@ -46,14 +47,15 @@ test("card drag survives hovering another tab and commits once with undo/redo", 
   await page.getByRole("button", { name: "Redo", exact: true }).click();
   await expect(page.getByTestId("card-card-a")).toBeVisible();
   await page.getByRole("button", { name: "Save", exact: true }).click();
-  await expect(page.getByTestId("edit-button")).toBeVisible();
+  await expect(page.getByTestId("profile-switcher")).toBeEnabled();
   await page.reload();
   await page.getByTestId("tab-tab-b").click();
   await expect(page.getByTestId("section-section-c").getByTestId("card-card-a")).toBeVisible();
 });
 
 test("whole sections can be dragged into empty tabs and moved back from the inspector", async ({ page }) => {
-  await page.getByTestId("edit-button").click();
+  await page.getByTestId("profile-switcher").click();
+  await page.getByRole("menuitem", { name: "Homepage settings", exact: true }).click();
   await startDrag(page, page.getByTestId("section-section-a").getByRole("button", { name: "Drag section", exact: true }));
   await expect(page.getByTestId("section-drag-overlay")).toBeVisible();
   await point(page, page.getByTestId("tab-empty-tab"));
@@ -69,12 +71,13 @@ test("whole sections can be dragged into empty tabs and moved back from the insp
   await expect(page.getByTestId("tab-tab-b")).toHaveAttribute("aria-current", "page");
   await expect(page.getByTestId("section-section-a").getByTestId("card-card-a")).toBeVisible();
   await page.getByRole("button", { name: "Save", exact: true }).click();
-  await expect(page.getByTestId("edit-button")).toBeVisible();
+  await expect(page.getByTestId("profile-switcher")).toBeEnabled();
   expect((await savedConfig(page)).tabs[1].sections.map((section) => section.id)).toEqual(["section-c", "section-a"]);
 });
 
 test("card drops on an empty tab create a destination section; cancel never moves data", async ({ page }) => {
-  await page.getByTestId("edit-button").click();
+  await page.getByTestId("profile-switcher").click();
+  await page.getByRole("menuitem", { name: "Homepage settings", exact: true }).click();
   await startDrag(page, page.getByTestId("card-card-a"));
   await point(page, page.getByTestId("tab-tab-b"));
   await page.keyboard.press("Escape");
@@ -104,7 +107,8 @@ test("accent from an image is undoable and saves only on Save", async ({ page })
   const id = await page.evaluate(() => localStorage.getItem("chroma.active-profile"));
   await page.request.put(`http://127.0.0.1:3001/api/profiles/${id}/config`, { data: config });
   await page.reload();
-  await page.getByTestId("edit-button").click();
+  await page.getByTestId("profile-switcher").click();
+  await page.getByRole("menuitem", { name: "Homepage settings", exact: true }).click();
   await page.getByTestId("card-card-a").click();
   await page.getByRole("button", { name: "Accent from icon", exact: true }).click();
   await expect(page.getByLabel("Accent color", { exact: true })).toHaveValue("#e04060");
@@ -113,7 +117,7 @@ test("accent from an image is undoable and saves only on Save", async ({ page })
   await expect(page.getByLabel("Accent color", { exact: true })).not.toHaveValue("#e04060");
   await page.getByRole("button", { name: "Redo", exact: true }).click();
   await page.getByRole("button", { name: "Save", exact: true }).click();
-  await expect(page.getByTestId("edit-button")).toBeVisible();
+  await expect(page.getByTestId("profile-switcher")).toBeEnabled();
   expect((await savedConfig(page)).tabs[0].sections[0].cards[0].appearance?.accent).toBe("#e04060");
 });
 
@@ -121,7 +125,7 @@ test("header keeps logo, search, clock and actions on one row on desktop and tab
   for (const width of [1440, 1024, 768]) {
     await page.setViewportSize({ width, height: 900 });
     const search = (await page.getByRole("searchbox", { name: "Search Google" }).boundingBox())!;
-    for (const item of [page.getByRole("img", { name: "Chroma Homepage", exact: true }), page.getByTestId("header-clock"), page.getByTestId("edit-button"), page.getByTestId("profile-switcher")]) {
+    for (const item of [page.getByRole("img", { name: "Chroma Homepage", exact: true }), page.getByTestId("header-clock"), page.getByTestId("profile-switcher")]) {
       const rect = (await item.boundingBox())!;
       expect(Math.abs((rect.y + rect.height / 2) - (search.y + search.height / 2))).toBeLessThan(4);
     }
@@ -143,7 +147,8 @@ test("Iconify colors work for tab accents and monochrome homepage icons receive 
   const id = await page.evaluate(() => localStorage.getItem("chroma.active-profile"));
   await page.request.put(`http://127.0.0.1:3001/api/profiles/${id}/config`, { data: config });
   await page.reload();
-  await page.getByTestId("edit-button").click();
+  await page.getByTestId("profile-switcher").click();
+  await page.getByRole("menuitem", { name: "Homepage settings", exact: true }).click();
   await page.getByTestId("tab-tab-a").click();
   await page.getByRole("button", { name: "Accent from icon", exact: true }).click();
   await expect(page.getByLabel("Accent color", { exact: true })).toHaveValue("#00bb88");

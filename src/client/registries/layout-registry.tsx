@@ -1,5 +1,7 @@
 import type { CSSProperties, ComponentType, PropsWithChildren } from "react";
 import type { Layout } from "../../shared/config";
+import { changeLayout } from "../../shared/bento";
+import { BentoGrid } from "../components/bento-grid";
 import { Field, Input, Select } from "../components/ui";
 
 interface LayoutViewProps extends PropsWithChildren { layout: Layout }
@@ -24,21 +26,23 @@ function ListLayout({ layout, children }: LayoutViewProps) {
 }
 
 function GridLayoutEditor({ layout, onChange }: LayoutEditorProps) {
-  const update = (patch: Partial<Layout>) => onChange({ ...layout, ...patch });
+  const update = (patch: Partial<Pick<Layout, "minCardWidth" | "gap" | "maxColumns">>) => onChange({ ...layout, ...patch });
   return <div className="grid gap-4">
-    <Field label="Presentation"><Select value={layout.type} onChange={(event) => onChange({ ...layout, type: event.target.value as Layout["type"] })}>
+    <Field label="Presentation"><Select value={layout.type} onChange={(event) => onChange(changeLayout(layout, event.target.value as Layout["type"]))}>
       {Object.entries(LayoutTypeRegistry).map(([type, definition]) => <option key={type} value={type}>{definition.label}</option>)}
     </Select></Field>
     {layout.type !== "list" && <Field label="Minimum card width"><Input type="number" min={120} max={600} value={layout.minCardWidth} onChange={(event) => update({ minCardWidth: Number(event.target.value) })} /></Field>}
     <Field label="Gap"><Input type="number" min={4} max={64} value={layout.gap} onChange={(event) => update({ gap: Number(event.target.value) })} /></Field>
-    {layout.type !== "list" && <Field label="Maximum columns (optional)"><Input type="number" min={1} max={12} value={layout.maxColumns ?? ""} placeholder="Auto" onChange={(event) => update({ maxColumns: event.target.value ? Number(event.target.value) : undefined })} /></Field>}
+    {layout.type !== "list" && layout.type !== "bento" && <Field label="Maximum columns (optional)"><Input type="number" min={1} max={12} value={layout.maxColumns ?? ""} placeholder="Auto" onChange={(event) => update({ maxColumns: event.target.value ? Number(event.target.value) : undefined })} /></Field>}
+    {layout.type === "bento" && <p className="text-xs leading-relaxed text-slate-400">Open Bento studio to set columns, row height and individual box sizes. Columns adapt to the available section width.</p>}
   </div>;
 }
 
 export const LayoutTypeRegistry: Record<Layout["type"], LayoutDefinition> = {
   grid: { label: "Horizontal cards", Renderer: GridLayout, Editor: GridLayoutEditor },
   tiles: { label: "Icon tiles", Renderer: GridLayout, Editor: GridLayoutEditor },
-  list: { label: "Compact list", Renderer: ListLayout, Editor: GridLayoutEditor }
+  list: { label: "Compact list", Renderer: ListLayout, Editor: GridLayoutEditor },
+  bento: { label: "Bento boxes", Renderer: ({ layout, children }) => layout.type === "bento" ? <BentoGrid layout={layout}>{children}</BentoGrid> : null, Editor: GridLayoutEditor }
 };
 
 export function LayoutRenderer({ layout, children }: LayoutViewProps) {

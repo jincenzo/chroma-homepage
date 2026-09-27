@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { createId } from "./id";
+import { changeLayout } from "./bento";
 import { parseConfig, type ChromaConfig, type IconReference, type Layout, type Section } from "./config";
 
 export const HISTORY_FILE_LIMIT = 20 * 1024 * 1024;
@@ -100,7 +101,7 @@ export function appendHistorySites(config: ChromaConfig, links: HistoryLink[], d
   for (let index = 0; index < accepted.length; index += 12) {
     const section: Section = {
       id: createId(), title: index === 0 ? "Most visited" : `More sites${index > 12 ? ` ${index / 12}` : ""}`,
-      layout: { type: destination.layout, minCardWidth: 180, gap: 16 },
+      layout: changeLayout({ type: "grid", minCardWidth: 180, gap: 16 }, destination.layout),
       cards: accepted.slice(index, index + 12).map((link) => ({
         id: createId(), type: "link", label: link.label, url: link.url, openInNewTab: true,
         icon: link.icon ?? { type: "iconify", value: "lucide:globe" },

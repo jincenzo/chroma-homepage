@@ -24,13 +24,13 @@
 ## A homepage, not a configuration project
 
 Chroma stays clean when you are browsing and becomes a visual workspace when you
-click **Edit**. Arrange tabs, move entire sections, choose card layouts, and tune
+open **Profile avatar → Homepage settings**. Arrange tabs, move entire sections, choose card layouts, and tune
 colors in the Inspector. Nothing is persisted until you **Save**.
 
 | Make it yours | Keep it simple |
 | --- | --- |
 | **Visual editing** — draft changes, Undo/Redo, Save and Cancel | **Self-hosted** — one container, one persistent data directory |
-| **Flexible layouts** — horizontal cards, icon tiles, compact lists | **Portable JSON** — readable, versioned documents; no database |
+| **Flexible layouts** — horizontal cards, icon tiles, compact lists, bento boxes | **Portable JSON** — readable, versioned documents; no database |
 | **Drag across tabs** — move cards or whole sections | **Independent profiles** — separate homepages on the same server |
 | **Inherited styling** — homepage → tab → section → card | **Safe editing workflow** — validation, atomic writes, previous-version backups |
 | **Icons and images** — Iconify search, uploads, accent extraction | **Fast access** — type-to-search launcher, aliases, tags, web shortcuts |
@@ -50,7 +50,7 @@ cd chroma-homepage
 docker compose up -d --build
 ```
 
-Open **http://localhost:3000**. Demo links are ready to explore; click **Edit** to
+Open **http://localhost:3000**. Demo links are ready to explore; open **Profile avatar → Homepage settings** to
 make them yours.
 
 Want a different port?
@@ -71,7 +71,7 @@ under `/data`. Back up the whole directory to keep everything portable.
 
 ### Arrange visually
 
-1. Click **Edit**, then select a tab, section title, or card.
+1. Open **Profile avatar → Homepage settings**, then select a tab, section title, or card.
 2. Change its properties in the right-hand Inspector.
 3. Drag cards or section grips. Hover another tab for about **500 ms** to move across tabs.
 4. **Save** when you are happy, or **Cancel** to discard the session.
@@ -80,6 +80,10 @@ To put the icon above the label, select the **section title**, then choose
 **Layout → Presentation → Icon tiles**. Choose **Horizontal cards** for icons on
 the left, or **Compact list** for short rows. Presentation currently applies to
 the entire section, not individual cards.
+
+For mixed box sizes, choose **Bento boxes**, then **Open Bento studio**. Select a
+box in the live preview and use Small, Wide, Tall, Feature, or custom grid-unit
+sizes. Set columns, row height and gap, then **Apply to draft** and **Save**.
 
 Use **Accent from icon** to extract a color from an image or colored icon.
 Monochrome icons receive an explicitly labeled color suggestion. **Inherit**

@@ -12,6 +12,7 @@ import { CardRenderer } from "../registries/card-registry";
 import { LayoutRenderer } from "../registries/layout-registry";
 import { useEditorStore } from "../store/editor-store";
 import { VisualIcon } from "./visual-icon";
+import { bentoBoxStyle } from "./bento-grid";
 
 type DragData =
   | { kind: "tab"; tabId: string }
@@ -44,7 +45,7 @@ function SortableCard({ card, tabId, section, editing, appearance }: { card: Car
   const selection = useEditorStore((state) => state.selection);
   const select = useEditorStore((state) => state.select);
   const selected = selection?.type === "card" && selection.cardId === card.id;
-  return <motion.article layout data-surface={appearance.surface} data-density={appearance.density} data-testid={`card-${card.id}`} ref={setNodeRef} style={{ ...cardStyle(appearance), transform: CSS.Transform.toString(transform), transition, touchAction: editing ? "none" : undefined }} {...(editing ? attributes : {})} {...(editing ? listeners : {})} onClick={(event) => { if (editing) { event.preventDefault(); select({ type: "card", tabId, sectionId, cardId: card.id }); } }} className={cn("chroma-link-card relative overflow-hidden rounded-[22px]", editing && "cursor-grab ring-offset-2 ring-offset-[#090b13] active:cursor-grabbing", selected && "ring-2 ring-violet-400/55", isDragging && "opacity-20")}>
+  return <motion.article layout data-surface={appearance.surface} data-density={appearance.density} data-testid={`card-${card.id}`} ref={setNodeRef} style={{ ...cardStyle(appearance), ...(section.layout.type === "bento" ? bentoBoxStyle(card) : {}), transform: CSS.Transform.toString(transform), transition, touchAction: editing ? "none" : undefined }} {...(editing ? attributes : {})} {...(editing ? listeners : {})} onClick={(event) => { if (editing) { event.preventDefault(); select({ type: "card", tabId, sectionId, cardId: card.id }); } }} className={cn("chroma-link-card relative overflow-hidden rounded-[22px]", editing && "cursor-grab ring-offset-2 ring-offset-[#090b13] active:cursor-grabbing", selected && "ring-2 ring-violet-400/55", isDragging && "opacity-20")}>
     {editing && <GripVertical className="absolute right-2 top-2 size-4 text-slate-600" />}<CardRenderer card={card} editing={editing} />
   </motion.article>;
 }
@@ -169,7 +170,12 @@ export function Dashboard({ config, editing }: { config: ChromaConfig; editing: 
       if (overData.kind === "card" && draft) {
         index = draft.tabs.find((item) => item.id === targetTabId)?.sections.find((item) => item.id === targetSectionId)?.cards.findIndex((item) => item.id === overData.cardId);
         const rect = active.rect.current.translated;
-        if (index !== undefined && rect && rect.top + rect.height / 2 > over.rect.top + over.rect.height / 2) index++;
+        const origin = findCard(draft, activeData.cardId);
+        // Same-section sorting follows document order, not box centers: bento
+        // neighbors can have different heights or sit on the same row.
+        if (index !== undefined && activeData.sectionId === targetSectionId && origin) {
+          if (origin.cardIndex < index) index++;
+        } else if (index !== undefined && rect && rect.top + rect.height / 2 > over.rect.top + over.rect.height / 2) index++;
       }
       move(activeData.cardId, targetTabId, targetSectionId, index);
     }

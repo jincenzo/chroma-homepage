@@ -19,6 +19,12 @@ button { cursor: pointer; }
 }
 .card-grid { --column-min: calc((100% - (var(--max-columns, 12) - 1) * var(--grid-gap, 16px)) / var(--max-columns, 12)); display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, max(var(--card-min, 180px), var(--column-min))), 1fr)); gap: var(--grid-gap, 16px); }
 .card-list { display: grid; grid-template-columns: minmax(0, 1fr); }
+.layout-bento { display: grid; grid-template-columns: repeat(var(--bento-columns), minmax(0, 1fr)); grid-auto-rows: minmax(var(--bento-row-height), auto); grid-auto-flow: row; }
+.layout-bento .chroma-link-content { flex-direction: column; justify-content: center; text-align: center; min-height: 0; gap: 12px; }
+.layout-bento .chroma-link-content > span:last-child { flex: 0 1 auto; width: 100%; }
+.bento-preview-card > .pointer-events-none { display: block; height: 100%; }
+.bento-preview-card[aria-pressed="true"] { outline: 2px solid #a78bfa; outline-offset: 2px; }
+.layout-bento .chroma-link-card { min-height: 0; }
 .inspector-scroll { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.15) transparent; }
 .chroma-tabs { scrollbar-width: none; border: 1px solid rgba(255, 255, 255, .075); background: rgba(4, 7, 13, .34); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .025), 0 12px 36px rgba(0, 0, 0, .14); backdrop-filter: blur(20px); }
 .chroma-tabs::-webkit-scrollbar { display: none; }

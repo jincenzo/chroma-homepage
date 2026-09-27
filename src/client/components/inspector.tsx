@@ -1,5 +1,6 @@
 import { Settings2, Trash2 } from "lucide-react";
-import { useRef } from "react";
+import { useRef, useState } from "react";
+import { BentoStudio } from "./bento-studio";
 import { CardTypeRegistry } from "../registries/card-registry";
 import { LayoutTypeRegistry } from "../registries/layout-registry";
 import { selectedCard, useEditorStore } from "../store/editor-store";
@@ -15,6 +16,7 @@ export function Inspector() {
   const { draft, selection, updateDraft, deleteSelection } = useEditorStore();
   const card = useEditorStore(selectedCard);
   const sidebar = useRef<HTMLElement>(null);
+  const [bentoOpen, setBentoOpen] = useState(false);
   if (!draft) return null;
   const tab = selection ? draft.tabs.find((item) => item.id === selection.tabId) : undefined;
   const section = selection && selection.type !== "tab" ? tab?.sections.find((item) => item.id === selection.sectionId) : undefined;
@@ -27,6 +29,7 @@ export function Inspector() {
   return <aside ref={sidebar} className="inspector-scroll fixed inset-y-0 right-0 z-40 w-[320px] overflow-y-auto border-l border-white/10 bg-[#0b0d16]/94 p-5 shadow-2xl backdrop-blur-2xl">
     <div className="mb-6 flex items-center justify-between"><div><p className="text-xs font-semibold uppercase tracking-[.18em] text-violet-400">Properties</p><h2 className="mt-1 text-lg font-semibold text-white">{title}</h2></div>{selection && <Button aria-label="Delete selected item" title="Delete" onClick={deleteSelection} className="size-9 px-0 text-rose-300"><Trash2 className="size-4" /></Button>}</div>
     {!selection && <HomepageSettings />}
+    {section?.layout.type === "bento" && <Button className="mb-5 w-full" onClick={() => setBentoOpen(true)}>Open Bento studio</Button>}
     {selection && <Button className="mb-5 w-full" onClick={() => { useEditorStore.getState().select(null); sidebar.current?.scrollTo({ top: 0 }); }}><Settings2 className="size-4" />Homepage settings</Button>}
     {selection?.type === "tab" && tab && <div className="grid gap-4">
       <Field label="Label"><Input value={tab.label} onChange={(event) => updateDraft((config) => { const target = config.tabs.find((item) => item.id === tab.id); if (target) target.label = event.target.value; })} /></Field>
@@ -55,5 +58,6 @@ export function Inspector() {
       const target = config.tabs.flatMap((item) => item.sections).flatMap((item) => item.cards).find((item) => item.id === card.id);
       if (target) target.appearance = appearance;
     })} />}
+    {bentoOpen && section?.layout.type === "bento" && <BentoStudio key={section.id} section={section} selectedId={card?.id} onClose={() => setBentoOpen(false)} />}
   </aside>;
 }

@@ -22,13 +22,14 @@ try {
     throw new Error(`Unexpected API access in screenshot capture: ${pathname}`);
   });
   await page.goto("http://127.0.0.1:4174");
-  await expect(page.getByTestId("edit-button")).toBeVisible();
+  await expect(page.getByTestId("profile-switcher")).toBeEnabled();
   await ready(page);
   await page.screenshot({ path: `${directory}/homepage.png`, animations: "disabled" });
 
   await page.setViewportSize({ width: 1600, height: 1180 });
   await page.getByTestId(`tab-${showcase.id}`).click();
-  await page.getByTestId("edit-button").click();
+  await page.getByTestId("profile-switcher").click();
+  await page.getByRole("menuitem", { name: "Homepage settings", exact: true }).click();
   const section = page.getByTestId(`section-${showcase.sections[0].id}`);
   await section.getByRole("heading").click();
   await expect(page.getByRole("combobox", { name: "Presentation", exact: true })).toHaveValue("tiles");

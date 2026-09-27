@@ -7,7 +7,6 @@ import { CardLauncher } from "./components/card-launcher";
 import { EditorToolbar } from "./components/editor-toolbar";
 import { Inspector } from "./components/inspector";
 import { SearchClock } from "./components/search-clock";
-import { Button } from "./components/ui";
 import { ProfileSelector } from "./components/profile-selector";
 import { saveConfig } from "./lib/api";
 import { useProfiles } from "./lib/use-profiles";
@@ -69,7 +68,6 @@ export function App() {
       <div className="header-brand relative flex min-w-0 items-center gap-2.5 pl-1"><img src="/chroma.svg" alt="Chroma Homepage" className="size-10 shrink-0" /><h1 title={config.homepage.title} className="header-title max-w-44 truncate text-sm font-semibold tracking-tight text-white">{config.homepage.title}</h1></div>
       <SearchClock />
       <div className="relative flex shrink-0 items-center gap-2">
-      {!editMode && <Button aria-label="Edit" title="Edit homepage" disabled={profileState.loading || saving} onClick={beginEdit} data-testid="edit-button"><Pencil className="size-4" /><span className="hidden xl:inline">Edit</span></Button>}
       {editMode && <span title="Edit mode" className="flex items-center gap-1.5 rounded-full border border-violet-400/20 bg-violet-400/10 p-2 text-xs font-semibold text-violet-300"><Pencil className="size-3.5" /><span className="hidden xl:inline">Editing</span></span>}
       <ProfileSelector {...profileState} homepage={config.homepage} onEdit={beginEdit} disabled={editMode || saving || profileState.loading} editing={editMode} onChange={async (action) => { setError(null); return profileState.changeProfile(action); }} />
       </div>

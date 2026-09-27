@@ -13,7 +13,8 @@ for (const fetchDetails of [false, true]) {
     }, profile.id);
     await page.route("**/api/link-preview", (route) => route.fulfill({ json: { url: route.request().postDataJSON().url, title: "Discovered website", description: "Website details" } }));
     await page.goto("/");
-    await page.getByTestId("edit-button").click();
+    await page.getByTestId("profile-switcher").click();
+  await page.getByRole("menuitem", { name: "Homepage settings", exact: true }).click();
     await page.getByRole("button", { name: "Import HistoryOut", exact: true }).click();
     // Optional local reproduction file is never copied into the repository.
     await page.getByLabel("HistoryOut JSON file", { exact: true }).setInputFiles(process.env.HISTORYOUT_TEST_FILE ?? {
@@ -32,7 +33,7 @@ for (const fetchDetails of [false, true]) {
     await expect(page.getByRole("dialog", { name: "Import HistoryOut", exact: true })).toBeHidden();
     await expect(page.locator('[data-testid^="card-"]')).toHaveCount(20);
     await page.getByRole("button", { name: "Save", exact: true }).click();
-    await expect(page.getByTestId("edit-button")).toBeVisible();
+    await expect(page.getByTestId("profile-switcher")).toBeEnabled();
     await page.reload();
     await expect(page.locator('[data-testid^="card-"]')).toHaveCount(20);
     const saved = parseConfig(await (await request.get(endpoint)).json());

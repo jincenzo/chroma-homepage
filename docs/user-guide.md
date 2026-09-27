@@ -11,7 +11,7 @@ Phase 1 includes:
 - cross-section and cross-tab card drag and drop, including delayed tab activation;
 - an in-app card clipboard with copy, cut, paste, duplicate, and delete;
 - Iconify search and custom image uploads;
-- horizontal cards, icon tiles, compact lists, and responsive full/half/third-width sections;
+- horizontal cards, icon tiles, compact lists, bento boxes, and responsive full/half/third-width sections;
 - inherited section appearance with per-card color, surface, density, icon size, and description overrides;
 - a keyboard launcher with typo-tolerant search, aliases, tags, and editable web search shortcuts;
 - validated JSON import/export and atomic server-side persistence;
@@ -159,10 +159,30 @@ only persisted when you Save.
 
 ## Layout and appearance
 
-In Edit Mode, select a section heading. Choose **Horizontal cards**, **Icon tiles**,
-or **Compact list**, and set its width to full, half, or one third. Sections collapse
+Enter Edit Mode from **Profile avatar → Homepage settings**, then select a section heading.
+Choose **Horizontal cards**, **Icon tiles**, **Compact list**, or **Bento boxes**,
+and set its width to full, half, or one third. Sections collapse
 to a single column when the canvas is narrow, including when the Inspector is open.
 Grid maximum columns limit the column count without leaving unused page width.
+
+### Bento studio
+
+Choose **Bento boxes** for a section, then **Open Bento studio** in the Inspector.
+Select a box in the preview or the Box dropdown. Choose Small (1×1), Wide (2×1),
+Tall (1×2), Feature (2×2), or enter a custom width (1–12 columns) and height (1–4 rows).
+Set the section's column count (1–12), minimum row height (120–320 px), and gap.
+The section's Minimum card width determines when columns collapse on smaller screens.
+
+Boxes flow in document order, without overlap; this first version does not store
+absolute positions or support corner-drag resizing. Reorder or move cards using the
+dashboard's existing drag and drop. Actual columns adapt to the section's available
+width, and wide boxes clamp to fit. Rows may grow for content. Saved sizes remain
+unchanged when the viewport shrinks or cards move to another section/layout.
+
+Studio edits stay local until **Apply to draft**, which creates one undoable change.
+**Cancel studio** or Escape discards those local edits. The homepage still requires
+**Save** to persist; Cancel in the main toolbar discards the whole session. Copy,
+paste and duplicate retain box sizes. Other layouts ignore them.
 
 Section appearance provides defaults for all its cards: accent color, Glass/Flat/Minimal
 surface, density, icon size, and description visibility. Select a card to override any

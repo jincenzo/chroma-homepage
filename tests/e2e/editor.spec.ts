@@ -35,7 +35,8 @@ test("HistoryOut imports a reviewed selection into one profile without sending r
   page.on("request", (req) => { if (req.postData()) bodies.push(req.postData()!); });
   await page.goto("/");
   await switchProfile(page, profile.id);
-  await page.getByTestId("edit-button").click();
+  await page.getByTestId("profile-switcher").click();
+  await page.getByRole("menuitem", { name: "Homepage settings", exact: true }).click();
   await page.getByRole("button", { name: "Import HistoryOut", exact: true }).click();
   const dialog = page.getByRole("dialog", { name: "Import HistoryOut", exact: true });
   await chooseHistoryFile(page, historyExport);
@@ -57,7 +58,7 @@ test("HistoryOut imports a reviewed selection into one profile without sending r
   await page.getByRole("button", { name: "Redo", exact: true }).click();
   await expect(page.getByText("Code home", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Save", exact: true }).click();
-  await expect(page.getByTestId("edit-button")).toBeVisible();
+  await expect(page.getByTestId("profile-switcher")).toBeEnabled();
   await page.reload();
   await expect(page.getByRole("link", { name: "Code home", exact: true })).toBeVisible();
   await page.getByRole("navigation", { name: "Dashboard tabs" }).getByRole("button", { name: "Daily browsing", exact: true }).click();
@@ -67,7 +68,8 @@ test("HistoryOut imports a reviewed selection into one profile without sending r
   const saved = await (await request.get(endpoint)).json();
   expect(saved.tabs[1].sections[0].layout.type).toBe("list");
   expect(bodies.join(" ")).not.toMatch(/do-not-send|private-repo|Private project|86039/);
-  await page.getByTestId("edit-button").click();
+  await page.getByTestId("profile-switcher").click();
+  await page.getByRole("menuitem", { name: "Homepage settings", exact: true }).click();
   await page.getByRole("button", { name: "Import HistoryOut", exact: true }).click();
   await chooseHistoryFile(page, historyExport);
   await expect(page.getByRole("checkbox", { name: "Select https://github.com/", exact: true })).toBeDisabled();
@@ -78,7 +80,8 @@ test("HistoryOut imports a reviewed selection into one profile without sending r
 test("HistoryOut rejects malformed input and empty results without touching the draft", async ({ page, request }) => {
   await request.put("http://127.0.0.1:3001/api/config", { data: fixtureConfig() });
   await page.goto("/");
-  await page.getByTestId("edit-button").click();
+  await page.getByTestId("profile-switcher").click();
+  await page.getByRole("menuitem", { name: "Homepage settings", exact: true }).click();
   await page.getByRole("button", { name: "Import HistoryOut", exact: true }).click();
   await page.getByLabel("HistoryOut JSON file", { exact: true }).setInputFiles({ name: "broken.json", mimeType: "application/json", buffer: Buffer.from('[{"url":') });
   await expect(page.getByRole("alert")).toContainText("Invalid JSON");
@@ -102,7 +105,8 @@ test("HistoryOut fetches only approved homepages, preserves edited labels and to
     return body.url.includes("wikipedia") ? route.fulfill({ status: 422, json: { error: "Unavailable" } }) : route.fulfill({ json: { url: body.url, title: "Detected title", description: "Detected description", icon: { type: "iconify", value: "mdi:github" } } });
   });
   await page.goto("/");
-  await page.getByTestId("edit-button").click();
+  await page.getByTestId("profile-switcher").click();
+  await page.getByRole("menuitem", { name: "Homepage settings", exact: true }).click();
   await page.getByRole("button", { name: "Import HistoryOut", exact: true }).click();
   await chooseHistoryFile(page, historyExport);
   await expect(page.getByText("3 selected · Maximum 100 per import")).toBeVisible();
@@ -151,7 +155,7 @@ test("homepage settings edits existing identity and cascades accent through tab,
   await page.getByLabel("Default accent color", { exact: true }).fill("#aabbcc");
   await expect(card).toHaveCSS("--card-accent", "#778899");
   await page.getByRole("button", { name: "Save", exact: true }).click();
-  await expect(page.getByTestId("edit-button")).toBeVisible();
+  await expect(page.getByTestId("profile-switcher")).toBeEnabled();
   await page.reload();
   await expect(page.getByRole("heading", { name: "My space", exact: true })).toBeVisible();
   await expect(card).toHaveCSS("--card-accent", "#778899");
@@ -169,7 +173,8 @@ test("Inherit removes accent overrides, supports undo and follows homepage chang
   config.tabs[0].sections[0].cards[0].appearance = { accent: "#778899" };
   await request.put("http://127.0.0.1:3001/api/config", { data: config });
   await page.goto("/");
-  await page.getByTestId("edit-button").click();
+  await page.getByTestId("profile-switcher").click();
+  await page.getByRole("menuitem", { name: "Homepage settings", exact: true }).click();
   const card = page.getByTestId("card-card-a");
   await card.click();
   await page.getByRole("button", { name: "Inherit accent from section", exact: true }).click();
@@ -187,14 +192,15 @@ test("Inherit removes accent overrides, supports undo and follows homepage chang
   await page.getByLabel("Default accent color", { exact: true }).fill("#ddaa00");
   await expect(card).toHaveCSS("--card-accent", "#ddaa00");
   await page.getByRole("button", { name: "Save", exact: true }).click();
-  await expect(page.getByTestId("edit-button")).toBeVisible();
+  await expect(page.getByTestId("profile-switcher")).toBeEnabled();
   await page.reload();
   await expect(card).toHaveCSS("--card-accent", "#ddaa00");
   const saved = await (await request.get("http://127.0.0.1:3001/api/config")).json();
   expect(saved.tabs[0].appearance?.accent).toBeUndefined();
   expect(saved.tabs[0].sections[0].appearance?.accent).toBeUndefined();
   expect(saved.tabs[0].sections[0].cards[0].appearance?.accent).toBeUndefined();
-  await page.getByTestId("edit-button").click();
+  await page.getByTestId("profile-switcher").click();
+  await page.getByRole("menuitem", { name: "Homepage settings", exact: true }).click();
   await page.getByLabel("Default accent color", { exact: true }).fill("#ff0000");
   await page.getByLabel("Homepage title / profile name", { exact: true }).fill("Discard this name");
   await page.getByRole("button", { name: "Cancel", exact: true }).click();
@@ -241,7 +247,8 @@ test("profile avatars support creation, image uploads, undo, cancel, save and re
   const id = (await trigger.getAttribute("data-profile-id"))!;
   const endpoint = `http://127.0.0.1:3001/api/profiles/${id}/config`;
   expect((await (await request.get(endpoint)).json()).homepage.icon).toEqual({ type: "iconify", value: "lucide:server" });
-  await page.getByTestId("edit-button").click();
+  await page.getByTestId("profile-switcher").click();
+  await page.getByRole("menuitem", { name: "Homepage settings", exact: true }).click();
   const avatarEditor = page.getByRole("group", { name: "Profile avatar", exact: true });
   await avatarEditor.getByLabel("Upload custom image", { exact: true }).setInputFiles({ name: "avatar.png", mimeType: "image/png", buffer: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+j4xkAAAAASUVORK5CYII=", "base64") });
   await expect(trigger.locator("img")).toBeVisible();
@@ -258,7 +265,8 @@ test("profile avatars support creation, image uploads, undo, cancel, save and re
   await trigger.click();
   await expect(page.locator(`[role="menuitemradio"][data-profile-id="${id}"] img`)).toHaveAttribute("src", src!);
   await page.keyboard.press("Escape");
-  await page.getByTestId("edit-button").click();
+  await page.getByTestId("profile-switcher").click();
+  await page.getByRole("menuitem", { name: "Homepage settings", exact: true }).click();
   await page.getByRole("button", { name: "Use default avatar", exact: true }).click();
   await expect(trigger.locator("img")).toHaveCount(0);
   await page.getByRole("button", { name: "Cancel", exact: true }).click();
@@ -272,14 +280,15 @@ test("profile avatars support creation, image uploads, undo, cancel, save and re
 test("creates, moves, saves, and reloads a link card", async ({ page, request }) => {
   await request.put("http://127.0.0.1:3001/api/config", { data: defaultConfig });
   await page.goto("/");
-  await page.getByTestId("edit-button").click();
+  await page.getByTestId("profile-switcher").click();
+  await page.getByRole("menuitem", { name: "Homepage settings", exact: true }).click();
   await page.getByTestId("section-home-quick-access").click({ position: { x: 12, y: 12 } });
   await page.getByTestId("add-card").click();
   await page.getByLabel("Label").fill("Playwright Link");
   const card = page.getByText("Playwright Link", { exact: true }).locator("xpath=ancestor::article");
   await card.dragTo(page.getByTestId("section-home-smart-home"));
   await page.getByRole("button", { name: "Save", exact: true }).click();
-  await expect(page.getByTestId("edit-button")).toBeVisible();
+  await expect(page.getByTestId("profile-switcher")).toBeEnabled();
   await page.reload();
   await expect(page.getByText("Playwright Link", { exact: true })).toBeVisible();
 });
@@ -310,7 +319,8 @@ test("opens and executes a matching card from global typing", async ({ page, req
 test("persists section presentation and card overrides, with undo and cancel", async ({ page, request }) => {
   await request.put("http://127.0.0.1:3001/api/config", { data: defaultConfig });
   await page.goto("/");
-  await page.getByTestId("edit-button").click();
+  await page.getByTestId("profile-switcher").click();
+  await page.getByRole("menuitem", { name: "Homepage settings", exact: true }).click();
   await page.getByRole("heading", { name: "Smart home", exact: true }).click();
   await page.getByRole("combobox", { name: "Presentation", exact: true }).selectOption("tiles");
   await page.getByRole("combobox", { name: "Section width" }).selectOption("third");
@@ -329,7 +339,7 @@ test("persists section presentation and card overrides, with undo and cancel", a
   await page.getByLabel("Aliases (comma separated)").fill("ha, smart house");
   await page.getByLabel("Tags (comma separated)").fill("automation, favorites");
   await page.keyboard.press("Control+s");
-  await expect(page.getByTestId("edit-button")).toBeVisible();
+  await expect(page.getByTestId("profile-switcher")).toBeEnabled();
   await page.reload();
   const card = page.getByTestId("card-home-assistant");
   await expect(card).toHaveAttribute("data-surface", "minimal");
@@ -339,7 +349,8 @@ test("persists section presentation and card overrides, with undo and cancel", a
   const saved = await (await request.get("http://127.0.0.1:3001/api/config")).json();
   const savedSection = saved.tabs[0].sections.find((item: { id: string }) => item.id === "home-smart-home");
   expect(savedSection.cards[0].aliases).toEqual(["ha", "smart house"]);
-  await page.getByTestId("edit-button").click();
+  await page.getByTestId("profile-switcher").click();
+  await page.getByRole("menuitem", { name: "Homepage settings", exact: true }).click();
   await page.getByRole("heading", { name: "Smart home", exact: true }).click();
   await page.getByRole("combobox", { name: "Presentation", exact: true }).selectOption("list");
   await page.getByRole("button", { name: "Cancel", exact: true }).click();
@@ -350,7 +361,7 @@ test("launcher supports aliases, fuzzy search, tags, and encoded web shortcuts",
   await request.put("http://127.0.0.1:3001/api/config", { data: defaultConfig });
   await context.route("https://github.com/search**", (route) => route.fulfill({ status: 200, contentType: "text/html", body: "<title>Search</title>" }));
   await page.goto("/");
-  await page.getByTestId("edit-button").waitFor();
+  await page.getByTestId("profile-switcher").waitFor();
   await page.keyboard.press("Control+k");
   const search = page.getByRole("textbox", { name: "Find a card", exact: true });
   await expect(search).toBeFocused();
@@ -404,14 +415,15 @@ test("pasting a URL fills a new card and persists the suggested metadata", async
     body: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+j4xkAAAAASUVORK5CYII=", "base64")
   }));
   await page.goto("/");
-  await page.getByTestId("edit-button").click();
+  await page.getByTestId("profile-switcher").click();
+  await page.getByRole("menuitem", { name: "Homepage settings", exact: true }).click();
   await page.getByTestId("add-card").click();
   await page.getByLabel("URL", { exact: true }).fill("https://discovered.example/");
   await expect(page.getByLabel("Label", { exact: true })).toHaveValue("Discovered service");
   await expect(page.getByLabel("Description", { exact: true })).toHaveValue("Details from the site");
   await expect(page.getByText("Added to your draft. Save when you are ready.")).toBeVisible();
   await page.getByRole("button", { name: "Save", exact: true }).click();
-  await expect(page.getByTestId("edit-button")).toBeVisible();
+  await expect(page.getByTestId("profile-switcher")).toBeEnabled();
   await page.reload();
   await expect(page.getByRole("link", { name: /Discovered service/ })).toBeVisible();
   const saved = await (await request.get("http://127.0.0.1:3001/api/config")).json();
@@ -427,7 +439,8 @@ test("metadata suggestions preserve existing custom fields until applied and can
     warning: "No usable favicon found. Your current icon will be kept."
   } }));
   await page.goto("/");
-  await page.getByTestId("edit-button").click();
+  await page.getByTestId("profile-switcher").click();
+  await page.getByRole("menuitem", { name: "Homepage settings", exact: true }).click();
   await page.getByTestId("card-home-assistant").click();
   await page.getByLabel("URL", { exact: true }).fill("https://changed.example/");
   await expect(page.getByRole("button", { name: "Use detected details" })).toBeVisible();
@@ -453,7 +466,8 @@ test("creates an independent homepage, protects drafts, saves and remembers the 
   const id = (await selector.getAttribute("data-profile-id"))!;
   expect(id).not.toBe("default");
   await expect(page.getByRole("link", { name: /Home Assistant/ })).toBeHidden();
-  await page.getByTestId("edit-button").click();
+  await page.getByTestId("profile-switcher").click();
+  await page.getByRole("menuitem", { name: "Homepage settings", exact: true }).click();
   await expect(selector).toBeDisabled();
   await expect(page.getByRole("menuitem", { name: "New profile", exact: true })).toBeHidden();
   await page.getByLabel("Homepage title / profile name", { exact: true }).fill("History workspace");
@@ -470,7 +484,8 @@ test("creates an independent homepage, protects drafts, saves and remembers the 
   await expect(page.getByRole("link", { name: /Only in sandbox/ })).toBeHidden();
   expect(await (await request.get("http://127.0.0.1:3001/api/config")).json()).toEqual(original);
   await switchProfile(page, id);
-  await page.getByTestId("edit-button").click();
+  await page.getByTestId("profile-switcher").click();
+  await page.getByRole("menuitem", { name: "Homepage settings", exact: true }).click();
   await page.getByTestId("add-card").click();
   await page.getByLabel("Label", { exact: true }).fill("Discard this");
   await page.getByRole("button", { name: "Cancel", exact: true }).click();
@@ -491,7 +506,8 @@ test("copies a profile and imports JSON only into that profile, with undo and va
   await expect(page.getByRole("link", { name: /Home Assistant/ })).toBeVisible();
   const selector = page.getByTestId("profile-switcher");
   const id = (await selector.getAttribute("data-profile-id"))!;
-  await page.getByTestId("edit-button").click();
+  await page.getByTestId("profile-switcher").click();
+  await page.getByRole("menuitem", { name: "Homepage settings", exact: true }).click();
   const fileInput = page.getByRole("button", { name: "Import configuration", exact: true }).locator('input[type="file"]');
   page.once("dialog", (dialog) => dialog.accept());
   await fileInput.setInputFiles({ name: "invalid.json", mimeType: "application/json", buffer: Buffer.from('{"invalid":true}') });
@@ -523,5 +539,5 @@ test("a failed profile switch leaves the current homepage selected and editable"
   await expect(page.getByRole("alert")).toContainText("Could not load");
   await expect(selector).toHaveAttribute("data-profile-id", "default");
   await expect(page.getByRole("link", { name: /Home Assistant/ })).toBeVisible();
-  await expect(page.getByTestId("edit-button")).toBeEnabled();
+  await expect(page.getByTestId("profile-switcher")).toBeEnabled();
 });
