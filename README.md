@@ -118,6 +118,13 @@ Use the profile avatar to create an empty homepage or copy a saved one.
 Profiles have independent configuration files and backups, while sharing the
 asset directory. They are separate dashboards, **not separate user accounts**.
 
+### Connect your own data
+
+Select a section in Edit Mode and click **Custom** for a remote JSON card. Try the
+built-in house demo, then connect your own endpoint with optional encrypted Bearer
+or X-API-Key authentication. See the [custom card protocol](docs/custom-card-protocol.md)
+for a complete example and a diagram showing where each field appears.
+
 ## Your data, in plain files
 
 ```text
@@ -134,8 +141,9 @@ Each document describes **Homepage → Tabs → Sections → Cards**. Saves are 
 on the server and written atomically as two-space-indented JSON. Images are stored
 as files, never embedded as Base64 in the document.
 
-Import/export handles configuration JSON and never includes API credentials. To move
-images too, copy the whole data directory. Private runtime data is deliberately excluded
+Export downloads a portable ZIP with the current draft and referenced images; import
+accepts ZIP and legacy JSON. API credentials are never included. A full server backup
+still requires the data directory. Private runtime data is deliberately excluded
 from this source repository. For stronger separation, set `CHROMA_SECRET_KEY` to 32 random
 bytes encoded as 64 hex characters or Base64; see `.env.example`.
 
@@ -172,7 +180,7 @@ instructions are in [docs/screenshots/README.md](docs/screenshots/README.md).
 ## Current scope
 
 Chroma is an early, single-user/trusted-network project. This version focuses on
-link cards, a Formula 1 next-race card, and the visual editor. Authentication,
+link cards, Formula 1, MotoGP, Gaming and custom JSON cards, and the visual editor. Authentication,
 multi-user permissions, weather, calendars, and service monitoring are not implemented.
 Automatic backups do not yet have a retention policy or a restore UI.
 

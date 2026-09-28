@@ -115,6 +115,11 @@ export function createMotoGpCard(): Card {
   return { id: createId(), type: "motogp", label: "Next MotoGP race", view: "next-race", riderCount: 3, refreshMinutes: 60, icon: { type: "iconify", value: "mdi:motorbike" }, bento: { width: 2, height: 1 }, appearance: { accent: "#f97316" } };
 }
 
+export function createRemoteCard(): Card {
+  return { id: createId(), type: "remote-data", label: "My house", endpoint: "demo:house", allowLocalNetwork: false, authMode: "none", refreshSeconds: 60,
+    icon: { type: "iconify", value: "lucide:house" }, bento: { width: 2, height: 3 }, appearance: { accent: "#38bdf8" } };
+}
+
 export function createSection(): Section {
   return { id: createId(), title: "New section", layout: { type: "grid", minCardWidth: 180, gap: 16 }, cards: [] };
 }

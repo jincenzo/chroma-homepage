@@ -19,6 +19,8 @@ import { GamingError, GamingService } from "./gaming";
 import { MotoGpError, MotoGpService } from "./motogp";
 import { DashboardBundleError, exportDashboard, importDashboard } from "./dashboard-bundle";
 import { MAX_BUNDLE_BYTES, MAX_CONFIG_BYTES } from "../shared/dashboard-bundle";
+import { remoteCredentialInputSchema, remoteHouseExample, remoteRequestSchema } from "../shared/remote-card";
+import { RemoteCardError, RemoteCardService } from "./remote-card";
 
 const mimeExtensions: Record<string, string> = {
   "image/png": ".png",
@@ -41,9 +43,11 @@ export async function createApp(options: AppOptions) {
   const formulaOne = new FormulaOneService(secrets, options.fetchFormulaOne);
   const gaming = new GamingService(secrets, options.fetchGaming);
   const motoGp = new MotoGpService(options.fetchMotoGp);
+  const remoteCards = new RemoteCardService(secrets);
   await app.register(multipart, { limits: { fileSize: 5 * 1024 * 1024, files: 1 } });
 
   app.setErrorHandler((error, _request, reply) => {
+    if (error instanceof RemoteCardError) return reply.code(error.statusCode).send({ error: error.message });
     if (error instanceof DashboardBundleError) return reply.code(error.statusCode).send({ error: error.message });
     if (error instanceof ZodError) return reply.code(400).send({ error: "Invalid profile or configuration", issues: error.issues });
     if ((error as NodeJS.ErrnoException).code === "ENOENT") return reply.code(404).send({ error: "Profile not found" });
@@ -60,6 +64,23 @@ export async function createApp(options: AppOptions) {
   });
 
   app.get("/api/config", async () => repository.read());
+  app.get("/api/examples/house", async (_request, reply) => reply.header("Cache-Control", "no-store").send(remoteHouseExample()));
+  app.post("/api/widgets/remote-data", { bodyLimit: 4096 }, async (request, reply) => {
+    const parsed = remoteRequestSchema.safeParse(request.body);
+    if (!parsed.success) return reply.code(400).send({ error: "Enter a valid remote endpoint and settings." });
+    return reply.header("Cache-Control", "no-store").send(await remoteCards.load(parsed.data));
+  });
+  app.post("/api/integrations/remote-data", { bodyLimit: 8192 }, async (request, reply) => {
+    const parsed = remoteCredentialInputSchema.safeParse(request.body);
+    if (!parsed.success) return reply.code(400).send({ error: "Use an HTTP(S) endpoint and a token of 8–4096 printable characters without spaces." });
+    return reply.header("Cache-Control", "no-store").code(201).send(await remoteCards.createCredential(parsed.data));
+  });
+  app.get<{ Params: { id: string } }>("/api/integrations/remote-data/:id", async (request, reply) => {
+    return reply.header("Cache-Control", "no-store").send(await remoteCards.credentialStatus(request.params.id));
+  });
+  app.delete<{ Params: { id: string } }>("/api/integrations/remote-data/:id", async (request, reply) => {
+    return reply.header("Cache-Control", "no-store").send(await remoteCards.deleteCredential(request.params.id));
+  });
   let transferPending = false;
   app.post("/api/dashboard/export", { bodyLimit: MAX_CONFIG_BYTES }, async (request, reply) => {
     if (transferPending) return reply.code(429).send({ error: "Another dashboard transfer is in progress. Please try again shortly." });

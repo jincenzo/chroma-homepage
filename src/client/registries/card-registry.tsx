@@ -1,5 +1,5 @@
 import { type ComponentType, useState } from "react";
-import type { Card, FormulaOneCard, GamingCard, LinkCard, MotoGpCard } from "../../shared/config";
+import type { Card, FormulaOneCard, GamingCard, LinkCard, MotoGpCard, RemoteCard } from "../../shared/config";
 import { VisualIcon } from "../components/visual-icon";
 import { Field, Input } from "../components/ui";
 import { IconPicker } from "../components/icon-picker";
@@ -7,6 +7,7 @@ import { LinkUrlEditor } from "../components/link-url-editor";
 import { FormulaOneCardEditor, FormulaOneCardView } from "../components/formula-one-card";
 import { GamingCardEditor, GamingCardView } from "../components/gaming-card";
 import { MotoGpCardEditor, MotoGpCardView } from "../components/motogp-card";
+import { RemoteCardEditor, RemoteCardView } from "../components/remote-card";
 
 interface CardViewProps { card: Card; editing: boolean }
 interface CardEditorProps { card: Card; onChange(card: Card): void }
@@ -59,6 +60,11 @@ function KeywordsInput({ value, onChange, placeholder }: { value: string[]; onCh
 
 export const CardTypeRegistry: Record<Card["type"], CardDefinition> = {
   link: { label: "Link", Renderer: LinkCardView, Editor: LinkCardEditor },
+  "remote-data": {
+    label: "Custom · Remote JSON",
+    Renderer: ({ card, editing }) => <RemoteCardView card={card as RemoteCard} editing={editing} />,
+    Editor: ({ card, onChange }) => <RemoteCardEditor key={card.id} card={card as RemoteCard} onChange={onChange} />
+  },
   motogp: {
     label: "MotoGP",
     Renderer: ({ card, editing }) => <MotoGpCardView card={card as MotoGpCard} editing={editing} />,

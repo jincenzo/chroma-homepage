@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { createId } from "../../shared/id";
 import type { Card, ChromaConfig } from "../../shared/config";
-import { copyCard, createFormulaOneCard, createGamingCard, createMotoGpCard, createLinkCard, createSection, createTab, duplicateCard, findCard, moveCard, moveSection, pasteCard, removeCard, reorderSections, reorderTabs } from "../../shared/operations";
+import { copyCard, createFormulaOneCard, createGamingCard, createMotoGpCard, createRemoteCard, createLinkCard, createSection, createTab, duplicateCard, findCard, moveCard, moveSection, pasteCard, removeCard, reorderSections, reorderTabs } from "../../shared/operations";
 
 export type Selection =
   | { type: "tab"; tabId: string }
@@ -93,7 +93,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     const tab = state.draft.tabs.find((item) => item.id === state.activeTabId);
     const selectedSectionId = state.selection?.type === "section" || state.selection?.type === "card" ? state.selection.sectionId : tab?.sections[0]?.id;
     if (!selectedSectionId) return;
-    const card = type === "formula-one" ? createFormulaOneCard() : type === "gaming" ? createGamingCard() : type === "motogp" ? createMotoGpCard() : createLinkCard();
+    const card = type === "formula-one" ? createFormulaOneCard() : type === "gaming" ? createGamingCard() : type === "motogp" ? createMotoGpCard() : type === "remote-data" ? createRemoteCard() : createLinkCard();
     state.updateDraft((draft) => { draft.tabs.find((item) => item.id === state.activeTabId)?.sections.find((item) => item.id === selectedSectionId)?.cards.push(card); });
     set({ selection: { type: "card", tabId: state.activeTabId, sectionId: selectedSectionId, cardId: card.id } });
   },

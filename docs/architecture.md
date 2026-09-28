@@ -69,6 +69,32 @@ Profiles do not provide authentication or tenant isolation; all users of the ser
 access all profile endpoints. The HistoryOut importer appends to the selected profile's
 draft without modifying other profiles or replacing existing content.
 
+### Remote JSON cards
+
+`shared/remote-card.ts` defines the strict, bounded `chroma-card/v1` data protocol;
+`RemoteCardView` renders only text, semantic status/tones, metrics, progress, lists,
+and safe navigation links. Identity, icon, appearance and sizing remain local.
+`RemoteCardEditor` supports settings, encrypted credential management, and a validated
+test preview. Source-keyed state, request abortion and current-draft checks prevent
+late requests from displaying another endpoint's data or replacing newer settings.
+
+`RemoteCardService` uses the existing DNS-pinned `fetchRemotePage` transport, now
+extended with internal headers, bounded redirects, response metadata and 304 handling.
+All DNS addresses and redirect targets pass existing SSRF controls. LAN access is
+explicit; special/metadata addresses are never allowed. GET responses are limited to
+64 KiB / 5 seconds. Authentication disables redirects entirely. Tokens are encrypted
+with their exact normalized endpoint and auth mode and referenced by an opaque UUID.
+No secret read endpoint exists; raw provider errors/validation values are not exposed.
+Exact token echoes are rejected. The unauthenticated Chroma API is still trusted-LAN only.
+
+Cache keys include endpoint, LAN permission, mode and credential reference; up to
+100 memory-only entries are kept with three concurrent fetches and single-flight
+deduplication. Bounded TTL hints, ETag/304, no-cache/no-store, exponential retry backoff
+and stale last-valid data are supported. Deleting credentials clears server cache.
+`demo:house` is local mock data; `/api/examples/house` exposes the same fake protocol
+through real HTTP. No saved profiles are modified by adding these examples.
+See [custom-card-protocol.md](custom-card-protocol.md) for schema examples and placement.
+
 ### Portable dashboard bundles
 
 `server/dashboard-bundle.ts` exports a validated draft as a version-1

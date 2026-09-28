@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { gamingQuerySchema } from "./gaming";
+import { remoteSettingsSchema } from "./remote-card";
 
 export const appearanceSchema = z.object({
   accent: z.string().regex(/^#[0-9a-f]{6}$/i, "Use a six-digit hex color").optional(),
@@ -79,7 +80,9 @@ export const motoGpCardSchema = z.object({
   refreshMinutes: z.number().int().min(30).max(1440).default(60)
 });
 
-export const cardSchema = z.discriminatedUnion("type", [linkCardSchema, formulaOneCardSchema, gamingCardSchema, motoGpCardSchema]);
+export const remoteCardSchema = remoteSettingsSchema.extend({ ...cardAppearanceFields, type: z.literal("remote-data") });
+
+export const cardSchema = z.discriminatedUnion("type", [linkCardSchema, formulaOneCardSchema, gamingCardSchema, motoGpCardSchema, remoteCardSchema]);
 
 export const gridLayoutSchema = z.object({
   type: z.literal("grid"),
@@ -183,6 +186,7 @@ export type LinkCard = z.infer<typeof linkCardSchema>;
 export type FormulaOneCard = z.infer<typeof formulaOneCardSchema>;
 export type GamingCard = z.infer<typeof gamingCardSchema>;
 export type MotoGpCard = z.infer<typeof motoGpCardSchema>;
+export type RemoteCard = z.infer<typeof remoteCardSchema>;
 export type Card = z.infer<typeof cardSchema>;
 export type GridLayout = z.infer<typeof gridLayoutSchema>;
 export type Layout = z.infer<typeof layoutSchema>;

@@ -38,6 +38,9 @@ export interface RemotePage {
   url: URL;
   body: Buffer;
   contentType: string;
+  status: number;
+  etag?: string;
+  cacheControl?: string;
 }
 
 async function resolveHost(hostname: string, signal: AbortSignal) {
@@ -54,9 +57,10 @@ async function resolveHost(hostname: string, signal: AbortSignal) {
 /** Resolve and pin each destination, including redirects, to prevent DNS rebinding. */
 export async function fetchRemotePage(input: string, options: {
   allowLocalNetwork: boolean; maxBytes: number; signal: AbortSignal;
+  headers?: Record<string, string>; allowNotModified?: boolean; maxRedirects?: number;
 }): Promise<RemotePage> {
   let url = validateRemoteUrl(input);
-  for (let redirect = 0; redirect <= 4; redirect++) {
+  for (let redirect = 0; redirect <= (options.maxRedirects ?? 4); redirect++) {
     options.signal.throwIfAborted();
     const hostname = url.hostname.replace(/^\[|\]$/g, "");
     const addresses = await resolveHost(hostname, options.signal);
@@ -64,7 +68,7 @@ export async function fetchRemotePage(input: string, options: {
     if (!addresses.length) throw new PreviewError("The hostname could not be resolved.");
     for (const { address } of addresses) validateRemoteAddress(address, options.allowLocalNetwork);
     const address = addresses[0];
-    const result = await new Promise<{ body: Buffer; contentType: string; redirect?: string }>((resolve, reject) => {
+    const result = await new Promise<Omit<RemotePage, "url"> & { redirect?: string }>((resolve, reject) => {
       const request = (url.protocol === "https:" ? httpsRequest : httpRequest)(url, {
         signal: options.signal,
         agent: false,
@@ -76,13 +80,19 @@ export async function fetchRemotePage(input: string, options: {
         headers: {
           "user-agent": "Chroma-Homepage/0.1 LinkPreview",
           accept: "text/html, image/*;q=0.9, */*;q=0.1",
+          ...options.headers,
           "accept-encoding": "identity"
         }
       }, (response) => {
         const status = response.statusCode ?? 500;
         if ([301, 302, 303, 307, 308].includes(status) && response.headers.location) {
           response.destroy();
-          resolve({ body: Buffer.alloc(0), contentType: "", redirect: response.headers.location });
+          resolve({ body: Buffer.alloc(0), contentType: "", status, redirect: response.headers.location });
+          return;
+        }
+        if (status === 304 && options.allowNotModified) {
+          response.destroy();
+          resolve({ body: Buffer.alloc(0), contentType: "", status, etag: response.headers.etag, cacheControl: response.headers["cache-control"] });
           return;
         }
         if (status < 200 || status >= 300) {
@@ -106,12 +116,12 @@ export async function fetchRemotePage(input: string, options: {
           chunks.push(chunk);
         });
         response.on("error", reject);
-        response.on("end", () => resolve({ body: Buffer.concat(chunks), contentType: response.headers["content-type"] ?? "" }));
+        response.on("end", () => resolve({ body: Buffer.concat(chunks), contentType: response.headers["content-type"] ?? "", status, etag: response.headers.etag, cacheControl: response.headers["cache-control"] }));
       });
       request.on("error", reject);
       request.end();
     });
-    if (!result.redirect) return { url, body: result.body, contentType: result.contentType };
+    if (!result.redirect) return { url, ...result };
     url = validateRemoteUrl(new URL(result.redirect, url).href);
   }
   throw new PreviewError("The site redirected too many times.");

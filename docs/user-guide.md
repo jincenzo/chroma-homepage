@@ -370,6 +370,18 @@ redirects, and timeouts. Each destination is validated and its DNS address pinne
 Link-local, metadata, multicast, and reserved addresses are excluded, including when
 local-network access is enabled.
 
+## Custom cards / your own endpoint
+
+In Edit Mode, select a section and click **Custom**. The card initially shows a fake
+house summary. Set **JSON endpoint** to your service's `chroma-card/v1` GET endpoint,
+enable **Allow local network** for Home Assistant/LAN services, and use **Test endpoint**
+to validate and preview it. Select optional Bearer or X-API-Key authentication and
+save its credential securely in the Inspector; tokens never enter configuration/export.
+Save the dashboard to persist the card. Refresh, errors, and stale data are shown explicitly.
+
+See [Custom card protocol](custom-card-protocol.md) for a complete house JSON example,
+the field-to-card diagram, bounds, caching behaviour, authentication and mock endpoint.
+
 ## API endpoints
 
 - `GET /api/config` returns the current validated document.
@@ -404,6 +416,10 @@ local-network access is enabled.
   catalogue (`id`, `title`) without requiring a key.
 - `GET /api/widgets/motogp/next-race` returns the next MotoGP Grand Prix (or `race: null`).
 - `GET /api/widgets/motogp/rider-standings` returns current-season MotoGP standings.
+- `POST /api/widgets/remote-data` fetches a custom endpoint from validated settings.
+- `POST /api/integrations/remote-data` creates an encrypted, endpoint-bound credential;
+  `GET|DELETE /api/integrations/remote-data/:id` returns only its configured status.
+- `GET /api/examples/house` returns fake house data in the `chroma-card/v1` protocol.
 
 See [docs/architecture.md](architecture.md) for implementation details and extension points.
 See [docs/improvements.md](improvements.md) for completed improvements and proposed next steps.

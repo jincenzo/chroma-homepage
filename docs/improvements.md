@@ -1,13 +1,13 @@
 # Chroma Homepage improvements
 
-Last updated: 2026-09-27.
+Last updated: 2026-09-28.
 
 This document tracks improvement areas discussed for Chroma Homepage,
 including delivered features and remaining ideas. Checked items are implemented;
 unchecked items are proposals, not implementation commitments.
 
 The current focus is the homepage, visual editor, and link launcher. F1, MotoGP and Gaming
-are supported built-in integrations; generic custom API cards remain deferred.
+are supported built-in integrations; Custom cards read versioned remote JSON.
 
 ## Gaming integration — Completed
 
@@ -189,31 +189,33 @@ Profiles are configurations, not authenticated user accounts.
 
 No browser extension or continuous history synchronization is implemented.
 
-## 11. Remote JSON cards — Proposed
+## 11. Remote JSON cards — Completed (v1)
 
-- [ ] Add a generic Remote data card that periodically reads a configured HTTP(S) endpoint.
-- [ ] Define and publish a versioned `chroma-card/v1` JSON protocol and validation schema.
-- [ ] Support bounded presentation primitives such as status, metrics, progress, lists,
+- [x] Add a generic Remote data card that periodically reads a configured HTTP(S) endpoint.
+- [x] Define and publish a versioned `chroma-card/v1` JSON protocol and validation schema.
+- [x] Support bounded presentation primitives such as status, metrics, progress, lists,
   short text, and safe HTTP(S) actions; never accept remote HTML, CSS, or JavaScript.
-- [ ] Fetch through the Chroma server, with response-size and duration limits, redirect
+- [x] Fetch through the Chroma server, with response-size and duration limits, redirect
   validation, SSRF/DNS-rebinding protections, request deduplication, and shared caching.
-- [ ] Support `ETag`, `304`, `Cache-Control`/protocol TTL hints, retry backoff, and display
+- [x] Support `ETag`, `304`, `Cache-Control`/protocol TTL hints, retry backoff, and display
   of the last valid response as stale when an endpoint temporarily fails.
-- [ ] Provide optional Bearer or `X-API-Key` authentication configured in the UI and
+- [x] Provide optional Bearer or `X-API-Key` authentication configured in the UI and
   stored only in the encrypted server-side secret repository.
-- [ ] Keep endpoint credentials out of card JSON, exports, backups, browser responses,
+- [x] Keep endpoint credentials out of card JSON, exports, backups, browser responses,
   logs, and Git; configuration stores only an opaque credential reference/status.
-- [ ] Make private-network access explicit per card while permanently blocking metadata,
+- [x] Make private-network access explicit per card while permanently blocking metadata,
   link-local, multicast, unspecified, and reserved destinations.
-- [ ] Add a Test endpoint action with protocol-validation feedback, preview, last-success
+- [x] Add a Test endpoint action with protocol-validation feedback, preview, last-success
   timestamp, and cache/error state before saving the card.
 - [ ] Consider JSON Pointer field mapping for arbitrary non-Chroma JSON as a later,
   separate feature; do not allow executable expressions or JavaScript mappings.
 
-The initial protocol should keep card identity, appearance, placement, and sizing under
-local Chroma control. Remote services provide validated data and semantic tones only.
-Suggested v1 limits are a 64 KB response, 5-second timeout, 30-second minimum refresh,
-six blocks, twelve metrics, twenty list rows, and two safe link actions.
+Card identity, appearance, placement, and sizing remain under local Chroma control.
+Remote services provide validated data and semantic tones only. Implemented v1 limits
+are a 64 KB response, 5-second timeout, 30-second minimum refresh, six blocks, twelve
+metrics, twenty list rows, and two safe link actions. Authenticated endpoints cannot
+redirect. A built-in house demo and real mock JSON route are included. See
+[the protocol and field-placement guide](custom-card-protocol.md).
 
 ## References
 

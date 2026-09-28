@@ -4,6 +4,7 @@ import { profileSchema, profilesSchema, type CreateProfile } from "../../shared/
 import { formulaOneCredentialStatusSchema, formulaOneStandingsSchema, formulaOneWidgetSchema } from "../../shared/formula-one";
 import { gamingCredentialStatusSchema, gamingShopsSchema, gamingWidgetSchema, type GamingQuery } from "../../shared/gaming";
 import { motoGpNextRaceSchema, motoGpStandingsSchema } from "../../shared/motogp";
+import { remoteCredentialCreatedSchema, remoteCredentialStatusSchema, remoteWidgetSchema, type RemoteCredentialInput, type RemoteSettings } from "../../shared/remote-card";
 
 const configUrl = (profileId: string) => `/api/profiles/${encodeURIComponent(profileId)}/config`;
 
@@ -62,6 +63,24 @@ export async function previewLink(url: string, allowLocalNetwork: boolean, signa
 async function errorMessage(response: Response, fallback: string): Promise<string> {
   const body = await response.json().catch(() => ({})) as { error?: unknown };
   return typeof body.error === "string" ? body.error : fallback;
+}
+
+export async function loadRemoteCard(settings: RemoteSettings, signal?: AbortSignal) {
+  const { endpoint, authMode, credentialId, allowLocalNetwork, refreshSeconds } = settings;
+  const response = await fetch("/api/widgets/remote-data", { method: "POST", cache: "no-store", headers: { "content-type": "application/json" },
+    body: JSON.stringify({ endpoint, authMode, credentialId, allowLocalNetwork, refreshSeconds }), signal });
+  if (!response.ok) throw new Error(await errorMessage(response, "Could not load the custom card."));
+  return remoteWidgetSchema.parse(await response.json());
+}
+export async function saveRemoteCredential(input: RemoteCredentialInput, signal?: AbortSignal) {
+  const response = await fetch("/api/integrations/remote-data", { method: "POST", cache: "no-store", headers: { "content-type": "application/json" }, body: JSON.stringify(input), signal });
+  if (!response.ok) throw new Error(await errorMessage(response, "Could not save the endpoint credential."));
+  return remoteCredentialCreatedSchema.parse(await response.json());
+}
+export async function remoteCredential(id: string, method: "GET" | "DELETE" = "GET", signal?: AbortSignal) {
+  const response = await fetch(`/api/integrations/remote-data/${encodeURIComponent(id)}`, { method, cache: "no-store", signal });
+  if (!response.ok) throw new Error(await errorMessage(response, "Could not manage the endpoint credential."));
+  return remoteCredentialStatusSchema.parse(await response.json());
 }
 
 export async function exportDashboardBundle(config: ChromaConfig, signal?: AbortSignal): Promise<Blob> {

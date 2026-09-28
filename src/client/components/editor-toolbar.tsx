@@ -74,6 +74,7 @@ export function EditorToolbar({ onSave, saving }: { onSave(): void; saving: bool
     <Button onClick={() => addCard("formula-one")} data-testid="add-f1-card"><Plus className="size-4" />F1</Button>
     <Button onClick={() => addCard("gaming")} data-testid="add-gaming-card"><Plus className="size-4" />Gaming</Button>
     <Button onClick={() => addCard("motogp")} data-testid="add-motogp-card"><Plus className="size-4" />MotoGP</Button>
+    <Button onClick={() => addCard("remote-data")} data-testid="add-remote-card"><Plus className="size-4" />Custom</Button>
     <span className="mx-1 h-6 w-px bg-white/10" />
     <Button onClick={() => void exportConfig()} disabled={!!transferring} aria-label="Export configuration" title="Export dashboard ZIP (includes images, excludes API keys)" className="size-9 px-0"><Download className={`size-4 ${transferring === "export" ? "animate-pulse" : ""}`} /></Button>
     <Button disabled={!!transferring} aria-label="Import configuration" title="Import dashboard ZIP or legacy JSON" className="relative size-9 overflow-hidden px-0"><Upload className={`size-4 ${transferring === "import" ? "animate-pulse" : ""}`} /><input aria-label="Dashboard ZIP or JSON file" disabled={!!transferring} type="file" accept="application/zip,.zip,application/json,.json" className="absolute inset-0 cursor-pointer opacity-0" onChange={(event) => void importConfig(event)} /></Button>
