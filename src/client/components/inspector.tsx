@@ -1,6 +1,8 @@
 import { Settings2, Trash2 } from "lucide-react";
 import { useRef, useState } from "react";
 import { BentoStudio } from "./bento-studio";
+import { SectionBentoStudio } from "./section-bento-studio";
+import { arrangeSections, DEFAULT_SECTION_GRID } from "../../shared/section-bento";
 import { CardTypeRegistry } from "../registries/card-registry";
 import { LayoutTypeRegistry } from "../registries/layout-registry";
 import { selectedCard, useEditorStore } from "../store/editor-store";
@@ -17,6 +19,7 @@ export function Inspector() {
   const card = useEditorStore(selectedCard);
   const sidebar = useRef<HTMLElement>(null);
   const [bentoOpen, setBentoOpen] = useState(false);
+  const [sectionStudioOpen, setSectionStudioOpen] = useState(false);
   if (!draft) return null;
   const tab = selection ? draft.tabs.find((item) => item.id === selection.tabId) : undefined;
   const section = selection && selection.type !== "tab" ? tab?.sections.find((item) => item.id === selection.sectionId) : undefined;
@@ -32,6 +35,13 @@ export function Inspector() {
     {section?.layout.type === "bento" && <Button className="mb-5 w-full" onClick={() => setBentoOpen(true)}>Open Bento studio</Button>}
     {selection && <Button className="mb-5 w-full" onClick={() => { useEditorStore.getState().select(null); sidebar.current?.scrollTo({ top: 0 }); }}><Settings2 className="size-4" />Homepage settings</Button>}
     {selection?.type === "tab" && tab && <div className="grid gap-4">
+      <Field label="Section arrangement"><Select value={tab.sectionLayout ? "bento" : "flow"} onChange={(event) => updateDraft((config) => {
+        const target = config.tabs.find((item) => item.id === tab.id);
+        if (!target) return;
+        if (event.target.value === "bento") Object.assign(target, arrangeSections({ ...target, sectionLayout: DEFAULT_SECTION_GRID }));
+        else delete target.sectionLayout;
+      })}><option value="flow">Flow</option><option value="bento">Bento grid</option></Select></Field>
+      <Button onClick={() => setSectionStudioOpen(true)}>Arrange sections</Button>
       <Field label="Label"><Input value={tab.label} onChange={(event) => updateDraft((config) => { const target = config.tabs.find((item) => item.id === tab.id); if (target) target.label = event.target.value; })} /></Field>
       <AccentColorEditor key={tab.id} icon={tab.icon} value={tab.appearance?.accent} inherited={resolveTabAppearance(undefined, draft.homepage).accent} source="homepage" onChange={(accent) => updateDraft((config) => {
         const target = config.tabs.find((item) => item.id === tab.id);
@@ -47,9 +57,9 @@ export function Inspector() {
         useEditorStore.getState().setActiveTab(event.target.value);
       }}>{draft.tabs.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</Select></Field>
       <Field label="Title"><Input value={section.title} onChange={(event) => updateDraft((config) => { const target = config.tabs.find((item) => item.id === tab?.id)?.sections.find((item) => item.id === section.id); if (target) target.title = event.target.value; })} /></Field>
-      <Field label="Section width"><Select value={section.width ?? "full"} onChange={(event) => updateSection({ width: event.target.value as Section["width"] })}>
+      {tab?.sectionLayout ? <Button onClick={() => setSectionStudioOpen(true)}>Arrange sections</Button> : <Field label="Section width"><Select value={section.width ?? "full"} onChange={(event) => updateSection({ width: event.target.value as Section["width"] })}>
         <option value="full">Full width</option><option value="two-thirds">Two thirds</option><option value="half">Half width</option><option value="third">One third</option>
-      </Select></Field>
+      </Select></Field>}
       <div className="border-t border-white/8 pt-5"><h3 className="mb-4 text-sm font-semibold text-slate-200">Layout · {LayoutTypeRegistry[section.layout.type].label}</h3>{(() => { const Editor = LayoutTypeRegistry[section.layout.type].Editor; return <Editor layout={section.layout} onChange={(layout) => updateDraft((config) => { const target = config.tabs.find((item) => item.id === tab?.id)?.sections.find((item) => item.id === section.id); if (target) target.layout = layout; })} />; })()}</div>
       <AppearanceEditor inherited={resolveTabAppearance(tab, draft.homepage)} value={section.appearance} onChange={(appearance) => updateSection({ appearance })} />
     </div>}
@@ -59,5 +69,6 @@ export function Inspector() {
       if (target) target.appearance = appearance;
     })} />}
     {bentoOpen && section?.layout.type === "bento" && <BentoStudio key={section.id} section={section} selectedId={card?.id} onClose={() => setBentoOpen(false)} />}
+    {sectionStudioOpen && tab && <SectionBentoStudio key={tab.id} tab={tab} onClose={() => setSectionStudioOpen(false)} />}
   </aside>;
 }

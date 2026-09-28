@@ -1,0 +1,76 @@
+import { expect, test } from "@playwright/test";
+import { fixtureConfig } from "../fixtures";
+
+test("adds Gaming, configures both providers, manages keys and persists without secrets", async ({ page, request }) => {
+  const { profile } = await (await request.post("http://127.0.0.1:3001/api/profiles", { data: { name: "Gaming sandbox" } })).json();
+  await request.put(`http://127.0.0.1:3001/api/profiles/${profile.id}/config`, { data: fixtureConfig() });
+  await request.delete("http://127.0.0.1:3001/api/integrations/isthereanydeal");
+  await page.addInitScript((id: string) => localStorage.setItem("chroma.active-profile", id), profile.id);
+  let empty = false;
+  let failed = false;
+  const requestedShops: string[] = [];
+  await page.route("**/api/widgets/gaming/shops?**", (route) => route.fulfill({ json: [{ id: 35, title: "GOG" }, { id: 61, title: "Steam" }, { id: 16, title: "Epic Games Store" }] }));
+  await page.route("https://assets.isthereanydeal.com/test/**", (route) => route.request().url().includes("missing") ? route.fulfill({ status: 404 }) : route.fulfill({ contentType: "image/svg+xml", body: '<svg xmlns="http://www.w3.org/2000/svg" width="300" height="140"><rect width="300" height="140" fill="#6547a5"/></svg>' }));
+  await page.route("**/api/widgets/gaming?**", async (route) => {
+    const deals = new URL(route.request().url()).searchParams.get("view") === "deals";
+    requestedShops.push(new URL(route.request().url()).searchParams.get("shops") ?? "");
+    if (failed) return route.fulfill({ status: 502, json: { error: "IsThereAnyDeal rejected the API key." } });
+    return route.fulfill({ json: {
+      source: deals ? "IsThereAnyDeal" : "GamerPower", sourceUrl: deals ? "https://isthereanydeal.com/" : "https://www.gamerpower.com/", updatedAt: "2026-09-27T12:00:00.000Z",
+      items: empty ? [] : Array.from({ length: 6 }, (_, index) => ({ id: String(index), title: `${deals ? "Offer" : "Free game"} ${index + 1}`, detail: deals ? "GOG" : "PC, Steam", url: "https://example.com/game", imageUrl: `https://assets.isthereanydeal.com/test/${index === 1 ? "missing" : "cover"}.jpg`, ...(deals ? { price: { amount: 9.99, currency: "EUR" }, regular: { amount: 39.99, currency: "EUR" }, discount: 75, voucher: "SALE" } : {}) }))
+    } });
+  });
+  await page.goto("/");
+  await page.getByTestId("profile-switcher").click();
+  await page.getByRole("menuitem", { name: "Homepage settings", exact: true }).click();
+  await page.getByTestId("add-gaming-card").click();
+  await expect(page.getByText("Free game 5", { exact: true })).toBeVisible();
+  const artwork = page.getByTestId("gaming-content").locator("img").first();
+  await expect.poll(() => artwork.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0)).toBe(true);
+  await expect(page.getByTestId("gaming-content").locator('img[src*="missing"]')).toHaveCount(0);
+  await expect(page.getByText("Free game 6", { exact: true })).toBeHidden();
+  await page.getByRole("spinbutton", { name: "Games shown" }).fill("6");
+  await expect(page.getByText("Free game 6", { exact: true })).toBeVisible();
+  await page.getByRole("combobox", { name: "Platform", exact: true }).selectOption("steam");
+  empty = true;
+  await page.getByRole("combobox", { name: "Platform", exact: true }).selectOption("gog");
+  await expect(page.getByText(/No active giveaways/)).toBeVisible();
+  empty = false;
+  await page.getByRole("combobox", { name: "Data shown" }).selectOption("deals");
+  await page.getByRole("combobox", { name: "Store country" }).selectOption("DE");
+  await page.getByRole("checkbox", { name: "GOG", exact: true }).check();
+  await page.getByRole("checkbox", { name: "Steam", exact: true }).check();
+  await expect.poll(() => requestedShops.at(-1)).toBe("35,61");
+  await page.getByRole("checkbox", { name: "All stores", exact: true }).check();
+  await expect.poll(() => requestedShops.at(-1)).toBe("");
+  await page.getByRole("checkbox", { name: "GOG", exact: true }).check();
+  await page.getByRole("checkbox", { name: "Steam", exact: true }).check();
+  await expect(page.getByText("Offer 6", { exact: true })).toBeVisible();
+  await expect(page.getByText("−75%").first()).toBeVisible();
+  await expect(page.getByText("Code: SALE").first()).toBeVisible();
+  await expect(page.getByText("Not configured", { exact: true })).toBeVisible();
+  await page.getByPlaceholder("Paste your API key", { exact: true }).fill("e2e-placeholder-gaming-key");
+  await page.getByRole("button", { name: "Save key", exact: true }).click();
+  await expect(page.getByText("Key saved", { exact: true })).toBeVisible();
+  await expect(page.getByPlaceholder("Enter a new key")).toHaveValue("");
+  failed = true;
+  await page.getByPlaceholder("Enter a new key").fill("e2e-invalid-placeholder-key");
+  await page.getByRole("button", { name: "Replace key", exact: true }).click();
+  await expect(page.getByText("IsThereAnyDeal rejected the API key.", { exact: true })).toBeVisible();
+  failed = false;
+  await page.getByRole("button", { name: "Remove gaming API key" }).click();
+  await expect(page.getByText("Not configured", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Save", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Save", exact: true })).toBeHidden();
+  const saved = await (await request.get(`http://127.0.0.1:3001/api/profiles/${profile.id}/config`)).json();
+  expect(JSON.stringify(saved)).not.toContain("placeholder");
+  expect(JSON.stringify(saved)).not.toContain("apiKey");
+  expect(saved.tabs[0].sections[0].cards.at(-1)).toMatchObject({ type: "gaming", view: "deals", country: "DE", gameCount: 6, shops: [35, 61] });
+  expect(await (await request.get("http://127.0.0.1:3001/api/integrations/isthereanydeal")).json()).toEqual({ configured: false });
+  await page.reload();
+  await expect(page.getByRole("link").filter({ hasText: "Offer 6" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "IsThereAnyDeal", exact: true })).toHaveAttribute("href", "https://isthereanydeal.com/");
+  await expect.poll(() => requestedShops.at(-1)).toBe("35,61");
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+});

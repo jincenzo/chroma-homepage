@@ -15,7 +15,7 @@ Phase 1 includes:
 - horizontal cards, icon tiles, compact lists, bento boxes, and responsive full/half/third-width sections;
 - inherited section appearance with per-card color, surface, density, icon size, and description overrides;
 - a keyboard launcher with typo-tolerant search, aliases, tags, and editable web search shortcuts;
-- validated JSON import/export and atomic server-side persistence;
+- portable ZIP export/import with images, legacy JSON import, and atomic server-side persistence;
 - local HistoryOut JSON analysis with ranked site previews and profile-scoped import;
 - a Fastify API, unit tests, a Playwright workflow, and a production Docker image.
 
@@ -65,6 +65,69 @@ used. Provider access, quotas, availability, and terms remain controlled by each
 Replacing or removing the key is available in the same Inspector panel. Removing it returns
 all Formula 1 cards to the public Jolpica schedule. Credentials never enter card JSON,
 configuration backups, exports, URLs, client storage, or provider error messages.
+
+## MotoGP card
+
+In Edit Mode, select a section and click **MotoGP** in the toolbar. No API key is
+required. The card uses public MotoGP calendar and results feeds and supports:
+
+- **Next Grand Prix**: event, circuit, date/time in your timezone and countdown.
+  This is the main MotoGP race, not the Sprint or Moto2/Moto3. If no confirmed start
+  time is available, it shows the circuit-local weekend dates and **Time TBC**.
+- **Championship leaders**: choose 1–30 riders (three by default), with team and
+  total championship points, including Sprint points.
+- **Favourite rider**: select a rider to show their championship position, points,
+  team/manufacturer and separate GP/Sprint wins when provided.
+
+Refresh intervals are configurable. Requests share a 30-minute server cache; this
+is not a live-timing service. The card handles unpublished schedules, empty
+standings and riders absent from a new season explicitly, and keeps previous data
+with a warning if a later refresh fails. Choose **Save** to persist the card and its
+settings. Existing layouts, Bento sizing, duplication and undo/redo work as usual.
+
+Data is attributed to [MotoGP](https://www.motogp.com/en/). These public website
+feeds are not a guaranteed developer API and may change or become unavailable.
+
+## Gaming card
+
+Enter Edit Mode, select a section, and click **Gaming**. Choose between:
+
+- **Free games · GamerPower**: full-game giveaways, newest first, with a platform
+  filter (PC, Steam, Epic Games Store, GOG and others). No API key required.
+- **Deals · IsThereAnyDeal**: offers sorted by highest discount, showing store,
+  regional price/currency, original price, discount and any required voucher code.
+  Offers can include DLC and bundles, labelled when the provider supplies a type.
+  Select your store country (Italy by default). Obtain your own key from
+  [IsThereAnyDeal applications](https://isthereanydeal.com/apps/) and save it in the Inspector.
+
+Set **Games shown** from 1 to 20 and a refresh interval. The server shares a
+30-minute cache across cards with the same filters. The default Bento size is 2×2;
+resize it in Bento studio as needed. Click a game in View Mode to open its offer.
+Game artwork is shown for both providers when available; missing or broken images
+fall back to an icon. Artwork loads directly from the provider's image host without
+a referrer or API key.
+
+For ITAD offers, **Stores** lists active shops in the selected country. Search the
+list and tick multiple shops (for example Steam and GOG). **All stores**, or no
+individual selection, removes the filter. The selection is saved per card and is
+sent to ITAD before fetching offers, not just used to hide items already loaded.
+Changing country preserves the selection; shops no longer available there remain
+listed as unavailable so you can remove them explicitly. Older cards default to all
+stores. Different store combinations have independent caches.
+
+Redemption requirements, regional availability and final checkout prices are set
+by the provider/store; always check before claiming or purchasing.
+
+The ITAD key uses the same encrypted server-only store as F1, under a separate
+credential. It is shared across profiles but never included in dashboard JSON,
+exports or profile backups. **Save key**, **Replace key** and removal take effect
+immediately, independently of dashboard Save/Cancel. “Key saved” confirms storage,
+not provider acceptance: authentication errors appear in the card. Free games
+continue working without an ITAD key. Keep this unauthenticated server on a trusted
+network; encryption at rest does not replace access control.
+
+Data and attribution: [GamerPower API](https://www.gamerpower.com/api-read) and
+[IsThereAnyDeal API](https://docs.isthereanydeal.com/).
 
 ## Local development
 
@@ -122,6 +185,31 @@ avatar. The menu supports arrow keys, Home/End, Escape, and outside-click dismis
 
 Profiles are separate configurations, **not user accounts or access-control boundaries**.
 There is no authentication. Keep the server on a trusted network.
+
+## Export and import a dashboard
+
+In **Edit Mode**, **Export configuration** downloads a ZIP containing the current
+draft (including unsaved edits), its uploaded profile avatar, and all referenced
+card images across every tab. Shared images appear only once. The ZIP contains
+`config.json`, `manifest.json`, and an `assets/` folder; keep them together when importing.
+Unused images, other profiles, backups, and integration API keys are not included.
+Iconify icons and live provider artwork remain external references, not offline copies.
+
+On another instance, select the destination profile, enter **Edit**, and use
+**Import configuration** to select the ZIP. Images receive fresh IDs, so existing
+assets cannot be overwritten. Review the result and press **Save**; importing only
+replaces the active draft and supports Undo/Redo/Cancel. Restored image files may
+remain on the server after Undo or Cancel, just like ordinary image uploads.
+Configure integration keys separately on the destination server.
+
+Older JSON exports are still accepted, but their referenced images must already
+exist on the destination. A JSON file alone cannot recover missing images: if they
+remain on the original server, export a new ZIP there. Missing images now produce
+an error instead of an incomplete export or broken import.
+
+Limits: 55 MB ZIP upload, 50 MB expanded contents, 500 images, 5 MB per image,
+and 1 MB configuration. Malformed, incomplete, or checksum-mismatched bundles are
+rejected before any images are restored. Only one transfer runs at a time.
 
 ## Import from HistoryOut
 
@@ -197,6 +285,23 @@ to a single column when the canvas is narrow, including when the Inspector is op
 Grid maximum columns limit the column count without leaving unused page width.
 
 ### Bento studio
+
+To align entire sections, use **Arrange sections** in the editor toolbar. The
+**Dashboard Bento studio** belongs to the active tab: set columns, row height and
+section gap, then drag section handles or resize using the bottom-right corner.
+The section controls also accept exact column, row, width and height in grid units.
+Click an empty cell to move the selected section there. Overlapping sections are
+moved into free space automatically; **Pack sections** removes deliberate gaps.
+
+**Apply to draft** enables the tab's Bento arrangement as one undoable change.
+Cancel/Escape discards studio edits. Use the homepage **Save** to persist them.
+To restore flowing sections, select the tab and choose **Section arrangement → Flow**;
+saved Bento dimensions are retained for later use.
+
+Section boxes have fixed grid heights, keeping their edges aligned even when one
+contains more cards. Long content scrolls inside its section. Below 760 px of canvas
+width, sections stack in visual reading order and expand to fit their content without
+changing saved positions. Card layout inside each section is configured independently.
 
 Choose **Bento boxes** for a section, then **Open Bento studio** in the Inspector.
 Select a box in the preview or the Box dropdown. Choose Small (1×1), Wide (2×1),
@@ -275,6 +380,10 @@ local-network access is enabled.
   profile, returning `{ profile, config }`.
 - `GET /api/profiles/:id/config` loads one profile.
 - `PUT /api/profiles/:id/config` validates and saves an existing profile with its own backup.
+- `POST /api/dashboard/export` accepts a configuration JSON body and returns a ZIP
+  with exactly its referenced local images, without saving the configuration.
+- `POST /api/dashboard/import` accepts one multipart ZIP or legacy JSON file, restores
+  images, and returns `{ config, assetCount }` without changing any saved profile.
 - `POST /api/assets` accepts one multipart image up to 5 MB.
 - `GET /api/assets/:id` serves an uploaded asset.
 - `POST /api/link-preview` accepts `{ url, allowLocalNetwork? }` and returns suggested
@@ -286,6 +395,15 @@ local-network access is enabled.
 - `GET /api/widgets/formula-one/driver-standings` returns normalized, cached current
   driver standings for the championship-leaders and favourite-driver card views.
   Championship-leaders cards can display a configurable 1–30 drivers (three by default).
+- `GET|PUT|DELETE /api/integrations/isthereanydeal` checks, saves (`{ apiKey }`),
+  or removes the server-side Gaming credential. Responses contain only `{ configured }`.
+- `GET /api/widgets/gaming?view=free-games&platform=pc` serves normalized giveaways;
+  `?view=deals&country=IT&shops=35,61` serves regional ITAD offers for the selected
+  store IDs (omit `shops` for all). No credentials in widget requests.
+- `GET /api/widgets/gaming/shops?country=IT` returns the cached regional ITAD shop
+  catalogue (`id`, `title`) without requiring a key.
+- `GET /api/widgets/motogp/next-race` returns the next MotoGP Grand Prix (or `race: null`).
+- `GET /api/widgets/motogp/rider-standings` returns current-season MotoGP standings.
 
 See [docs/architecture.md](architecture.md) for implementation details and extension points.
 See [docs/improvements.md](improvements.md) for completed improvements and proposed next steps.

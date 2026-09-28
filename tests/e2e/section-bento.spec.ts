@@ -1,0 +1,81 @@
+import { expect, test } from "@playwright/test";
+import { fixtureConfig } from "../fixtures";
+
+test("section Bento aligns a tall section with two stacked sections, saves and adapts to mobile", async ({ page, request }) => {
+  const { profile } = await (await request.post("http://127.0.0.1:3001/api/profiles", { data: { name: "Section Bento test" } })).json();
+  const config = fixtureConfig();
+  config.tabs[0].sections.push({ ...config.tabs[0].sections[1], id: "section-d", title: "D" });
+  config.tabs[0].sections.forEach((s) => { s.width = "half"; });
+  const cards = config.tabs[0].sections[0].cards;
+  cards.push(...Array.from({ length: 20 }, (_, index) => ({ ...cards[0], id: `extra-${index}`, label: `Extra ${index}` })));
+  const endpoint = `http://127.0.0.1:3001/api/profiles/${profile.id}/config`;
+  await request.put(endpoint, { data: config });
+  await page.addInitScript((id: string) => localStorage.setItem("chroma.active-profile", id), profile.id);
+  await page.setViewportSize({ width: 1600, height: 1000 });
+  await page.goto("/");
+  await page.getByTestId("profile-switcher").click();
+  await page.getByRole("menuitem", { name: "Homepage settings", exact: true }).click();
+  await page.getByRole("button", { name: "Arrange sections", exact: true }).click();
+  const studio = page.getByRole("dialog", { name: "Dashboard Bento studio", exact: true });
+  await studio.getByLabel("Section height", { exact: true }).fill("6");
+  await studio.getByLabel("Selected section").selectOption("section-b");
+  await studio.getByLabel("Section height", { exact: true }).fill("3");
+  await studio.getByLabel("Selected section").selectOption("section-d");
+  await studio.getByLabel("Section height", { exact: true }).fill("3");
+  await studio.getByLabel("Section column", { exact: true }).fill("4");
+  await studio.getByLabel("Section row", { exact: true }).fill("4");
+  await page.keyboard.press("Control+s");
+  await expect(studio).toBeVisible();
+  await studio.getByRole("button", { name: "Apply to draft" }).click();
+  await expect(page.locator(".section-bento-grid")).toBeVisible();
+  await page.getByRole("button", { name: "Undo", exact: true }).click();
+  await expect(page.locator(".section-bento-grid")).toHaveCount(0);
+  await page.getByRole("button", { name: "Redo", exact: true }).click();
+  await page.getByRole("button", { name: "Save", exact: true }).click();
+  await expect(page.getByTestId("profile-switcher")).toBeEnabled();
+  await page.reload();
+  const a = page.getByTestId("section-section-a"), b = page.getByTestId("section-section-b"), d = page.getByTestId("section-section-d");
+  await expect.poll(async () => {
+    const aa = await a.boundingBox(), bb = await b.boundingBox(), dd = await d.boundingBox();
+    return aa && bb && dd ? Math.abs(aa.y - bb.y) + Math.abs(aa.y + aa.height - dd.y - dd.height) + Math.abs(bb.x - dd.x) + Math.abs(bb.x - aa.x - aa.width - 24) + Math.abs(aa.height - 600) : 100;
+  }).toBeLessThan(2);
+  expect(await a.locator(".section-card-content").evaluate((el) => el.scrollHeight > el.clientHeight)).toBe(true);
+  const saved = await (await request.get(endpoint)).json();
+  expect(saved.tabs[0].sections.map((s: { dashboardBox: unknown }) => s.dashboardBox)).toEqual([
+    { column: 1, row: 1, width: 3, height: 6 }, { column: 4, row: 1, width: 3, height: 3 }, { column: 4, row: 4, width: 3, height: 3 }
+  ]);
+  await page.screenshot({ path: "test-results/section-bento-dashboard.png", fullPage: true });
+  await page.setViewportSize({ width: 390, height: 900 });
+  await expect(page.locator(".section-bento-grid")).toHaveAttribute("data-compact", "true");
+  await expect.poll(async () => {
+    const aa = await a.boundingBox(), bb = await b.boundingBox();
+    return Boolean(aa && bb && bb.y >= aa.y + aa.height);
+  }).toBe(true);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+  expect((await (await request.get(endpoint)).json()).tabs[0].sections).toEqual(saved.tabs[0].sections);
+
+  await page.setViewportSize({ width: 1600, height: 1000 });
+  await page.getByTestId("profile-switcher").click();
+  await page.getByRole("menuitem", { name: "Homepage settings", exact: true }).click();
+  await page.getByRole("button", { name: "Arrange sections", exact: true }).click();
+  const resize = studio.getByRole("button", { name: "Resize section A", exact: true });
+  await resize.hover();
+  const handle = (await resize.boundingBox())!;
+  await page.mouse.down();
+  await page.mouse.move(handle.x + handle.width / 2, handle.y + handle.height / 2 + 64, { steps: 6 });
+  await page.mouse.up();
+  await expect(studio.getByLabel("Section height", { exact: true })).toHaveValue("7");
+  const move = studio.getByRole("button", { name: "Move section D", exact: true });
+  await move.hover();
+  const moveHandle = (await move.boundingBox())!;
+  const preview = (await studio.getByTestId("section-studio-grid").boundingBox())!;
+  await page.mouse.down();
+  await page.mouse.move(moveHandle.x + moveHandle.width / 2 - (preview.width + 8) / 6, moveHandle.y + moveHandle.height / 2, { steps: 6 });
+  await page.mouse.up();
+  await expect(studio.getByLabel("Section column", { exact: true })).toHaveValue("3");
+  await page.keyboard.press("Escape");
+  await expect(studio).toBeHidden();
+  await expect(page.getByRole("button", { name: "Arrange sections", exact: true })).toBeFocused();
+  await page.getByRole("button", { name: "Cancel", exact: true }).click();
+  expect((await (await request.get(endpoint)).json()).tabs[0].sections).toEqual(saved.tabs[0].sections);
+});

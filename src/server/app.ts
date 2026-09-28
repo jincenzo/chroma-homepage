@@ -14,6 +14,11 @@ import { ProfileRepository } from "./profiles";
 import { formulaOneCredentialSchema } from "../shared/formula-one";
 import { FormulaOneError, FormulaOneService } from "./formula-one";
 import { SecretRepository } from "./secrets";
+import { gamingCredentialSchema, gamingHttpQuerySchema, gamingQuerySchema } from "../shared/gaming";
+import { GamingError, GamingService } from "./gaming";
+import { MotoGpError, MotoGpService } from "./motogp";
+import { DashboardBundleError, exportDashboard, importDashboard } from "./dashboard-bundle";
+import { MAX_BUNDLE_BYTES, MAX_CONFIG_BYTES } from "../shared/dashboard-bundle";
 
 const mimeExtensions: Record<string, string> = {
   "image/png": ".png",
@@ -24,7 +29,7 @@ const mimeExtensions: Record<string, string> = {
   "image/x-icon": ".ico"
 };
 
-export interface AppOptions { dataPath: string; defaultConfigPath: string; clientPath?: string; secretKey?: string; fetchFormulaOne?: typeof fetch }
+export interface AppOptions { dataPath: string; defaultConfigPath: string; clientPath?: string; secretKey?: string; fetchFormulaOne?: typeof fetch; fetchGaming?: typeof fetch; fetchMotoGp?: typeof fetch }
 
 export async function createApp(options: AppOptions) {
   const app = Fastify({ logger: true });
@@ -34,9 +39,12 @@ export async function createApp(options: AppOptions) {
   const secrets = new SecretRepository(options.dataPath, options.secretKey ?? process.env.CHROMA_SECRET_KEY);
   await secrets.initialize();
   const formulaOne = new FormulaOneService(secrets, options.fetchFormulaOne);
+  const gaming = new GamingService(secrets, options.fetchGaming);
+  const motoGp = new MotoGpService(options.fetchMotoGp);
   await app.register(multipart, { limits: { fileSize: 5 * 1024 * 1024, files: 1 } });
 
   app.setErrorHandler((error, _request, reply) => {
+    if (error instanceof DashboardBundleError) return reply.code(error.statusCode).send({ error: error.message });
     if (error instanceof ZodError) return reply.code(400).send({ error: "Invalid profile or configuration", issues: error.issues });
     if ((error as NodeJS.ErrnoException).code === "ENOENT") return reply.code(404).send({ error: "Profile not found" });
     reply.send(error);
@@ -52,6 +60,69 @@ export async function createApp(options: AppOptions) {
   });
 
   app.get("/api/config", async () => repository.read());
+  let transferPending = false;
+  app.post("/api/dashboard/export", { bodyLimit: MAX_CONFIG_BYTES }, async (request, reply) => {
+    if (transferPending) return reply.code(429).send({ error: "Another dashboard transfer is in progress. Please try again shortly." });
+    transferPending = true;
+    try {
+      const archive = await exportDashboard(request.body, repository.assetsPath);
+      return reply.header("Cache-Control", "no-store").header("Content-Disposition", 'attachment; filename="chroma-dashboard.zip"').type("application/zip").send(archive);
+    } finally { transferPending = false; }
+  });
+  app.post("/api/dashboard/import", async (request, reply) => {
+    if (transferPending) return reply.code(429).send({ error: "Another dashboard transfer is in progress. Please try again shortly." });
+    transferPending = true;
+    try {
+      let input: Buffer | undefined;
+      for await (const part of request.parts({ limits: { fileSize: MAX_BUNDLE_BYTES, files: 1, fields: 0, parts: 1 } })) {
+        if (part.type === "file") input = await part.toBuffer();
+      }
+      if (!input) return reply.code(400).send({ error: "Choose a Chroma dashboard ZIP or JSON file." });
+      return reply.header("Cache-Control", "no-store").send(await importDashboard(input, repository.assetsPath));
+    } finally { transferPending = false; }
+  });
+  for (const view of ["next-race", "rider-standings"] as const) {
+    app.get(`/api/widgets/motogp/${view}`, async (_request, reply) => {
+      reply.header("Cache-Control", "no-store");
+      try { return view === "next-race" ? await motoGp.nextRace() : await motoGp.standings(); }
+      catch (error) {
+        if (error instanceof MotoGpError) return reply.code(error.statusCode).send({ error: error.message });
+        throw error;
+      }
+    });
+  }
+  app.get("/api/integrations/isthereanydeal", async (_request, reply) => {
+    return reply.header("Cache-Control", "no-store").send({ configured: await gaming.configured() });
+  });
+  app.put("/api/integrations/isthereanydeal", { bodyLimit: 2048 }, async (request, reply) => {
+    const parsed = gamingCredentialSchema.safeParse(request.body);
+    if (!parsed.success) return reply.code(400).send({ error: "Enter a valid IsThereAnyDeal API key (8–256 letters, digits, underscores or hyphens)." });
+    await gaming.setApiKey(parsed.data.apiKey);
+    return reply.header("Cache-Control", "no-store").send({ configured: true });
+  });
+  app.delete("/api/integrations/isthereanydeal", async (_request, reply) => {
+    await gaming.deleteApiKey();
+    return reply.header("Cache-Control", "no-store").send({ configured: false });
+  });
+  app.get("/api/widgets/gaming", async (request, reply) => {
+    const parsed = gamingHttpQuerySchema.safeParse(request.query);
+    if (!parsed.success) return reply.code(400).send({ error: "Invalid gaming filters." });
+    reply.header("Cache-Control", "no-store");
+    try { return await gaming.games(parsed.data); }
+    catch (error) {
+      if (error instanceof GamingError) return reply.code(error.statusCode).send({ error: error.message });
+      throw error;
+    }
+  });
+  app.get("/api/widgets/gaming/shops", async (request, reply) => {
+    const parsed = gamingQuerySchema.pick({ country: true }).strict().safeParse(request.query);
+    if (!parsed.success) return reply.code(400).send({ error: "Invalid store country." });
+    try { return await gaming.shops(parsed.data.country); }
+    catch (error) {
+      if (error instanceof GamingError) return reply.code(error.statusCode).send({ error: error.message });
+      throw error;
+    }
+  });
   app.get("/api/integrations/api-sports-formula-one", async (_request, reply) => {
     return reply.header("Cache-Control", "no-store").send({ configured: await formulaOne.configured() });
   });

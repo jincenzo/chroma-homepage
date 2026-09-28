@@ -549,8 +549,8 @@ test("copies a profile and imports JSON only into that profile, with undo and va
   await page.getByTestId("profile-switcher").click();
   await page.getByRole("menuitem", { name: "Homepage settings", exact: true }).click();
   const fileInput = page.getByRole("button", { name: "Import configuration", exact: true }).locator('input[type="file"]');
-  page.once("dialog", (dialog) => dialog.accept());
   await fileInput.setInputFiles({ name: "invalid.json", mimeType: "application/json", buffer: Buffer.from('{"invalid":true}') });
+  await expect(page.getByRole("alert")).toContainText("not a valid Chroma dashboard");
   await expect(page.getByRole("heading", { name: "My copy", exact: true })).toBeVisible();
   const imported = structuredClone(defaultConfig);
   imported.homepage.title = "Imported profile";

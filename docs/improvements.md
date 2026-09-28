@@ -6,8 +6,24 @@ This document tracks improvement areas discussed for Chroma Homepage,
 including delivered features and remaining ideas. Checked items are implemented;
 unchecked items are proposals, not implementation commitments.
 
-The current focus is the homepage, visual editor, and link launcher. Custom API
-cards, live widgets, and service integrations remain deferred.
+The current focus is the homepage, visual editor, and link launcher. F1, MotoGP and Gaming
+are supported built-in integrations; generic custom API cards remain deferred.
+
+## Gaming integration — Completed
+
+- [x] Full-game giveaways through GamerPower, without credentials, with platform filtering.
+- [x] IsThereAnyDeal offers with regional pricing, discounts, stores and voucher codes.
+- [x] Configurable 1–20 entries, polling interval, and existing layout/Bento support.
+- [x] UI-managed, encrypted ITAD key outside configuration JSON and exports.
+- [x] Game artwork with fallback and per-card multi-store ITAD filtering from a regional catalogue.
+- [x] Shared server cache, bounded requests, provider attribution and explicit error states.
+
+## MotoGP integration — Completed
+
+- [x] Next Grand Prix with timezone-aware broadcast start time and countdown.
+- [x] Championship standings with 1–30 riders and a favourite-rider view.
+- [x] Separate GP/Sprint wins, no credentials, and shared bounded server requests.
+- [x] Existing card layouts/Bento, editor Save/Cancel and configuration persistence.
 
 ## 1. Distinct layouts — Completed
 
@@ -21,6 +37,8 @@ cards, live widgets, and service integrations remain deferred.
 - [x] Layout examples in a separate Style studio demo tab on the development instance.
 
 - [x] Bento layout with responsive grid-unit box sizes and a dedicated visual studio.
+- [x] Dashboard Bento arrangement for entire sections, with exact grid positions,
+  drag handles, corner resizing, collision handling, aligned heights and mobile stacking.
 - [x] Per-box size presets and numeric width/height; section columns, row height and gap.
 - [x] Studio Apply/Cancel isolation, one-step Undo/Redo, and normal homepage Save.
 - [ ] Corner-drag resizing and manual box placement in the Bento studio.
@@ -124,16 +142,17 @@ locale and local time zone. Launcher shortcut settings do not change that search
 
 - [x] Validated, atomic JSON persistence.
 - [x] Automatic backup of the previous configuration before saving.
-- [x] JSON import/export through the editor.
+- [x] Configuration export/import through the editor, with legacy JSON import support.
 - [ ] Browse existing backups from the UI.
 - [ ] Preview a backup before restoring it into the editor draft.
 - [ ] Restore a backup and save it as the current configuration.
-- [ ] Export/import a portable ZIP containing configuration and uploaded assets.
+- [x] Export/import a portable ZIP containing configuration and uploaded assets.
 - [ ] Recover an unsaved draft after a refresh or browser restart.
 - [ ] Warn before leaving a page with unsaved changes.
 
 Existing backups live under the configured data directory's `backups/` folder.
-Current JSON export does not bundle images.
+ZIP exports include the current draft and its referenced images, but never integration
+credentials. Old JSON-only exports cannot restore images absent from the destination.
 
 ## Other reference ideas — Proposed
 

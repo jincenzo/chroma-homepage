@@ -13,6 +13,7 @@ import { LayoutRenderer } from "../registries/layout-registry";
 import { useEditorStore } from "../store/editor-store";
 import { VisualIcon } from "./visual-icon";
 import { bentoBoxStyle } from "./bento-grid";
+import { SectionGrid } from "./section-grid";
 
 type DragData =
   | { kind: "tab"; tabId: string }
@@ -50,7 +51,7 @@ function SortableCard({ card, tabId, section, editing, appearance }: { card: Car
   </motion.article>;
 }
 
-function SortableSection({ section, tab, homepage, editing }: { section: Section; tab: Tab; homepage: ChromaConfig["homepage"]; editing: boolean }) {
+function SortableSection({ section, tab, homepage, editing, boxStyle }: { section: Section; tab: Tab; homepage: ChromaConfig["homepage"]; editing: boolean; boxStyle?: CSSProperties }) {
   const tabId = tab.id;
   const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({ id: `section:${section.id}`, data: { kind: "section", tabId, sectionId: section.id } satisfies DragData, disabled: !editing });
   const { over } = useDndContext();
@@ -59,11 +60,11 @@ function SortableSection({ section, tab, homepage, editing }: { section: Section
   const selection = useEditorStore((state) => state.selection);
   const select = useEditorStore((state) => state.select);
   const selected = selection?.type === "section" && selection.sectionId === section.id;
-  return <motion.section layout ref={setNodeRef} style={{ transform: CSS.Transform.toString(transform), transition }} data-width={section.width ?? "full"} data-testid={`section-${section.id}`} onClick={(event) => { if (editing && event.target === event.currentTarget) select({ type: "section", tabId, sectionId: section.id }); }} className={cn("dashboard-section min-w-0 rounded-[26px] py-2 transition", editing && "border border-dashed border-white/12 p-4", selected && "border-violet-400/60 bg-violet-500/[.04]", isOver && editing && "border-emerald-400/70 bg-emerald-400/[.06]", isDragging && "opacity-30")}>
+  return <motion.section layout={!tab.sectionLayout} ref={setNodeRef} style={{ ...boxStyle, transform: CSS.Transform.toString(transform), transition }} data-width={section.width ?? "full"} data-testid={`section-${section.id}`} onClick={(event) => { if (editing && event.target === event.currentTarget) select({ type: "section", tabId, sectionId: section.id }); }} className={cn("dashboard-section min-w-0 rounded-[26px] py-2 transition", editing && "border border-dashed border-white/12 p-4", selected && "border-violet-400/60 bg-violet-500/[.04]", isOver && editing && "border-emerald-400/70 bg-emerald-400/[.06]", isDragging && "opacity-30")}>
     <div className="mb-4 flex items-center gap-2"><h2 onClick={() => editing && select({ type: "section", tabId, sectionId: section.id })} className="text-sm font-semibold uppercase tracking-[.14em] text-slate-400">{section.title}</h2>{editing && <button type="button" aria-label="Drag section" title="Drag to reorder or move to another tab" className="touch-none cursor-grab rounded-md p-1 text-slate-400 hover:bg-white/10" {...attributes} {...listeners}><GripVertical className="size-4" /></button>}</div>
-    <SortableContext items={section.cards.map((card) => `card:${card.id}`)} strategy={rectSortingStrategy}>
+    <div className="section-card-content"><SortableContext items={section.cards.map((card) => `card:${card.id}`)} strategy={rectSortingStrategy}>
       <LayoutRenderer layout={section.layout}>{section.cards.map((card) => <SortableCard key={card.id} card={card} tabId={tabId} section={section} editing={editing} appearance={resolveAppearance(card, section, tab, homepage)} />)}{editing && section.cards.length === 0 && <button type="button" onClick={() => select({ type: "section", tabId, sectionId: section.id })} className="grid min-h-20 place-items-center rounded-2xl border border-dashed border-white/10 text-sm text-slate-600"><span className="flex items-center gap-2"><Plus className="size-4" />Select section, then add a link</span></button>}</LayoutRenderer>
-    </SortableContext>
+    </SortableContext></div>
   </motion.section>;
 }
 
@@ -195,7 +196,7 @@ export function Dashboard({ config, editing }: { config: ChromaConfig; editing: 
   };
 
   const tabPosition = config.homepage.tabPosition;
-  const canvas = tab && <motion.main key={tab.id} initial={dragging ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: dragging ? 0 : 0.18 }} className="dashboard-canvas dashboard-main"><TabCanvas tab={tab} editing={editing} dragging={dragging}><div className="section-grid"><SortableContext items={tab.sections.map((section) => `section:${section.id}`)} strategy={rectSortingStrategy}>{tab.sections.map((section) => <SortableSection key={section.id} section={section} tab={tab} homepage={config.homepage} editing={editing} />)}</SortableContext></div>{tab.sections.length === 0 && <div className="rounded-3xl border border-dashed border-white/10 py-16 text-center text-slate-500">This tab has no sections yet.</div>}</TabCanvas></motion.main>;
+  const canvas = tab && <motion.main key={tab.id} initial={dragging ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: dragging ? 0 : 0.18 }} className="dashboard-canvas dashboard-main"><TabCanvas tab={tab} editing={editing} dragging={dragging}><SortableContext items={tab.sections.map((section) => `section:${section.id}`)} strategy={rectSortingStrategy}><SectionGrid tab={tab}>{(section, boxStyle) => <SortableSection key={section.id} section={section} tab={tab} homepage={config.homepage} editing={editing} boxStyle={boxStyle} />}</SectionGrid></SortableContext>{tab.sections.length === 0 && <div className="rounded-3xl border border-dashed border-white/10 py-16 text-center text-slate-500">This tab has no sections yet.</div>}</TabCanvas></motion.main>;
   return <DndContext sensors={sensors} collisionDetection={collisionDetection} onDragStart={start} onDragOver={over} onDragEnd={end} onDragCancel={resetDrag}>
     <div className="dashboard-shell" data-tab-position={tabPosition}>
       <nav className="chroma-tabs dashboard-tabs" data-position={tabPosition} aria-label="Dashboard tabs"><SortableContext items={config.tabs.map((item) => `tab:${item.id}`)}>{config.tabs.map((item) => <SortableTab key={item.id} tab={item} active={item.id === tab?.id} editing={editing} accent={resolveTabAppearance(item, config.homepage).accent} />)}</SortableContext></nav>

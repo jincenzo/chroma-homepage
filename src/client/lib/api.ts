@@ -2,6 +2,8 @@ import { parseConfig, type ChromaConfig } from "../../shared/config";
 import { linkPreviewSchema } from "../../shared/link-preview";
 import { profileSchema, profilesSchema, type CreateProfile } from "../../shared/profiles";
 import { formulaOneCredentialStatusSchema, formulaOneStandingsSchema, formulaOneWidgetSchema } from "../../shared/formula-one";
+import { gamingCredentialStatusSchema, gamingShopsSchema, gamingWidgetSchema, type GamingQuery } from "../../shared/gaming";
+import { motoGpNextRaceSchema, motoGpStandingsSchema } from "../../shared/motogp";
 
 const configUrl = (profileId: string) => `/api/profiles/${encodeURIComponent(profileId)}/config`;
 
@@ -60,6 +62,56 @@ export async function previewLink(url: string, allowLocalNetwork: boolean, signa
 async function errorMessage(response: Response, fallback: string): Promise<string> {
   const body = await response.json().catch(() => ({})) as { error?: unknown };
   return typeof body.error === "string" ? body.error : fallback;
+}
+
+export async function exportDashboardBundle(config: ChromaConfig, signal?: AbortSignal): Promise<Blob> {
+  const response = await fetch("/api/dashboard/export", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(config), signal });
+  if (!response.ok) throw new Error(await errorMessage(response, "Could not export the dashboard and its images."));
+  return response.blob();
+}
+
+export async function importDashboardBundle(file: File, signal?: AbortSignal): Promise<ChromaConfig> {
+  const body = new FormData();
+  body.append("file", file);
+  const response = await fetch("/api/dashboard/import", { method: "POST", body, signal });
+  if (!response.ok) throw new Error(await errorMessage(response, "Could not import the dashboard and its images."));
+  const result = await response.json() as { config: unknown };
+  return parseConfig(result.config);
+}
+
+export async function loadMotoGpNextRace(signal?: AbortSignal) {
+  const response = await fetch("/api/widgets/motogp/next-race", { signal, cache: "no-store" });
+  if (!response.ok) throw new Error(await errorMessage(response, "Could not load MotoGP races."));
+  return motoGpNextRaceSchema.parse(await response.json());
+}
+
+export async function loadMotoGpStandings(signal?: AbortSignal) {
+  const response = await fetch("/api/widgets/motogp/rider-standings", { signal, cache: "no-store" });
+  if (!response.ok) throw new Error(await errorMessage(response, "Could not load MotoGP standings."));
+  return motoGpStandingsSchema.parse(await response.json());
+}
+
+export async function gamingCredential(method: "GET" | "PUT" | "DELETE" = "GET", apiKey?: string) {
+  const response = await fetch("/api/integrations/isthereanydeal", {
+    method, cache: "no-store",
+    ...(method === "PUT" ? { headers: { "content-type": "application/json" }, body: JSON.stringify({ apiKey }) } : {})
+  });
+  if (!response.ok) throw new Error(await errorMessage(response, "Could not manage the IsThereAnyDeal API key."));
+  return gamingCredentialStatusSchema.parse(await response.json());
+}
+
+export async function loadGaming(query: GamingQuery, signal?: AbortSignal) {
+  const params = new URLSearchParams({ view: query.view, platform: query.platform, country: query.country });
+  if (query.view === "deals" && query.shops.length) params.set("shops", query.shops.join(","));
+  const response = await fetch(`/api/widgets/gaming?${params}`, { signal, cache: "no-store" });
+  if (!response.ok) throw new Error(await errorMessage(response, "Could not load gaming data."));
+  return gamingWidgetSchema.parse(await response.json());
+}
+
+export async function loadGamingShops(country: GamingQuery["country"], signal?: AbortSignal) {
+  const response = await fetch(`/api/widgets/gaming/shops?country=${encodeURIComponent(country)}`, { signal });
+  if (!response.ok) throw new Error(await errorMessage(response, "Could not load the store list."));
+  return gamingShopsSchema.parse(await response.json());
 }
 
 export async function formulaOneCredentialStatus() {

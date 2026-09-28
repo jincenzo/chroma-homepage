@@ -1,5 +1,6 @@
 import type { Card, ChromaConfig, Section, Tab } from "./config";
 import { createId } from "./id";
+import { arrangeSections, positionSection } from "./section-bento";
 
 export interface CardLocation { tabIndex: number; sectionIndex: number; cardIndex: number }
 
@@ -67,7 +68,14 @@ export function reorderTabs(config: ChromaConfig, activeId: string, overId: stri
 
 export function reorderSections(config: ChromaConfig, tabId: string, activeId: string, overId: string): ChromaConfig {
   const next = structuredClone(config);
-  const sections = next.tabs.find((tab) => tab.id === tabId)?.sections;
+  const tab = next.tabs.find((tab) => tab.id === tabId);
+  if (tab?.sectionLayout && activeId !== overId) {
+    const normalized = arrangeSections(tab);
+    const target = normalized.sections.find((s) => s.id === overId)?.dashboardBox;
+    if (target) Object.assign(tab, positionSection(normalized, activeId, { column: target.column, row: target.row }));
+    return next;
+  }
+  const sections = tab?.sections;
   if (!sections) return next;
   const from = sections.findIndex((section) => section.id === activeId);
   const to = sections.findIndex((section) => section.id === overId);
@@ -87,6 +95,7 @@ export function moveSection(config: ChromaConfig, sectionId: string, targetTabId
   let index = targetIndex ?? targetTab.sections.length;
   if (source.id === targetTabId && targetIndex !== undefined && from < index) index--;
   targetTab.sections.splice(Math.max(0, Math.min(index, targetTab.sections.length)), 0, section);
+  if (targetTab.sectionLayout) Object.assign(targetTab, arrangeSections(targetTab));
   return next;
 }
 
@@ -96,6 +105,14 @@ export function createLinkCard(): Card {
 
 export function createFormulaOneCard(): Card {
   return { id: createId(), type: "formula-one", view: "next-race", driverCount: 3, label: "Next F1 race", refreshMinutes: 60, icon: { type: "iconify", value: "simple-icons:f1" }, bento: { width: 2, height: 1 }, appearance: { accent: "#e10600" } };
+}
+
+export function createGamingCard(): Card {
+  return { id: createId(), type: "gaming", label: "Free games", view: "free-games", platform: "pc", country: "IT", shops: [], gameCount: 5, refreshMinutes: 60, icon: { type: "iconify", value: "lucide:gamepad-2" }, bento: { width: 2, height: 2 }, appearance: { accent: "#a3e635" } };
+}
+
+export function createMotoGpCard(): Card {
+  return { id: createId(), type: "motogp", label: "Next MotoGP race", view: "next-race", riderCount: 3, refreshMinutes: 60, icon: { type: "iconify", value: "mdi:motorbike" }, bento: { width: 2, height: 1 }, appearance: { accent: "#f97316" } };
 }
 
 export function createSection(): Section {

@@ -62,12 +62,35 @@ creation requests. A failed switch leaves the loaded document and selection inta
 `App` captures an explicit profile ID for each save. Switching is disabled during editing
 and pending requests; saves temporarily disable editor interactions. Loading a new profile
 resets the editor store and remounts the dashboard/launcher to clear transient drag/search
-state. Async imports from an unmounted editor are ignored. JSON imports replace only the
+state. Async imports from an unmounted editor are ignored. Dashboard imports replace only the
 active draft, so other profiles cannot be overwritten through the import workflow.
 
 Profiles do not provide authentication or tenant isolation; all users of the server can
 access all profile endpoints. The HistoryOut importer appends to the selected profile's
 draft without modifying other profiles or replacing existing content.
+
+### Portable dashboard bundles
+
+`server/dashboard-bundle.ts` exports a validated draft as a version-1
+`chroma-dashboard` ZIP using fflate. The manifest records SHA-256 checksums for
+`config.json` and each image. Only asset references from the homepage avatar and
+cards across all tabs are collected; no secret store, arbitrary data-directory
+files, unrelated assets, or other profiles are included. Export refuses missing,
+ambiguous, oversized, or symlinked assets instead of silently omitting images.
+
+Import accepts only the expected manifest, configuration, and UUID image paths.
+Compressed input, individual entries, total expanded bytes, and entry counts are
+bounded; streaming decompression checks actual output sizes, not just ZIP headers.
+The entire document, reference set, and checksums are validated before any writes.
+Images are staged and exclusively linked under fresh UUIDs, with rollback on write
+failure; references are then remapped. Checksums detect corruption, not authenticity.
+Legacy JSON imports verify that their image references already exist locally.
+
+Transfer routes are serialized and return no-store responses. The client exports
+the current draft; imports replace only a still-current draft, support history,
+and require Save for persistence. Unmounted, cancelled, or stale import responses
+cannot replace a newer draft. Imported images may remain after Cancel/Undo, matching
+existing upload semantics. Integration keys must be configured separately.
 
 ### HistoryOut import
 
@@ -114,6 +137,19 @@ metadata enters snapshot history as one edit and never saves the configuration b
 
 ### Live data and secrets
 
+`MotoGpService` uses fixed public endpoints on `api.motogp.pulselive.com`, without
+credentials. Results seasons/categories resolve the current premier class and its
+rider standings; the broadcast events feed supplies race times with explicit
+offsets (results-session dates are not used for countdowns). Only GP events and
+MotoGP `RAC` sessions are eligible, excluding tests, Sprint and cancelled/completed
+races. Missing session times retain weekend-only dates. A published next-season
+calendar is checked when the current season has no upcoming GP. Stable rider IDs
+preserve favourites; GP and Sprint wins remain separate.
+
+Upstream requests coalesce through a bounded 30-minute cache, with one-minute
+error backoff, an 8-second per-request timeout, a streamed 2 MiB limit and redirects
+disabled. Provider errors are sanitized. No secrets or API-key UI are introduced.
+
 The Formula 1 card calls Chroma's `/api/widgets/formula-one/next-race` route, never a
 provider directly. When an API-Sports key is configured, the server first tries its fixed
 Formula 1 endpoint and adds the credential in an HTTP header. API-Sports free plans do not
@@ -124,6 +160,25 @@ timestamp and updates the countdown without spending another provider request.
 Current driver standings come from Jolpica's structured standings endpoint and share the
 same bounded-response and 30-minute caching policy.
 
+The Gaming card uses `/api/widgets/gaming` with validated view/platform/country
+filters. `GamingService` only contacts fixed GamerPower and IsThereAnyDeal hosts;
+ITAD credentials travel in the `ITAD-API-Key` header and redirects are disabled.
+The server normalizes public giveaways or regional deals, validates HTTPS offer
+links, and excludes expired ITAD offers and invalid rows. Fetches have an 8-second
+timeout and a streamed 1 MiB limit. A bounded 30-minute cache coalesces identical
+requests, limits concurrent upstream requests to four, and backs off errors for one
+minute. Key changes invalidate the cache; upstream errors never reach the browser
+verbatim. The client displays 1–20 entries, provider attribution and refresh time,
+and preserves previous data with a visible warning if a later refresh fails.
+Gaming settings contain no secret; `/api/integrations/isthereanydeal` stores a
+separate entry in the shared encrypted credential repository.
+Gaming cards persist a normalized `shops` ID array (empty means all), forwarded to
+ITAD's deals query and included in the cache key. The public `/service/shops/v1`
+catalogue is exposed through a country-validated, cached Chroma endpoint. Artwork
+is optional: ITAD banners/boxart and GamerPower thumbnails use an HTTPS image-host
+allowlist, with invalid assets dropped independently of the game. Browser images
+are lazy-loaded with no referrer and an error fallback; no credentials accompany them.
+
 Integration credentials are deliberately separate from homepage documents. The UI can
 set, replace, delete, and inspect only a `configured` flag; no API returns a stored secret.
 `SecretRepository` encrypts its JSON payload using AES-256-GCM and atomically writes it
@@ -133,6 +188,15 @@ the data volume. Configuration exports, profile copies, backups, logs, and card 
 therefore contain no provider key.
 
 ## Layout Registry
+
+Tabs may opt into `sectionLayout: { type: "bento", columns, rowHeight, gap }`.
+Each section then stores a separate `dashboardBox` (column, row, width, height);
+this is independent of the section's internal card layout and card box sizes.
+The shared section-placement function reserves explicit positions and packs new or
+displaced sections into free cells. The dashboard and section studio share this
+placement logic. Fixed rows keep section boundaries aligned; overflow stays in the
+section's scrollable card area. At narrow canvas widths the view stacks sections
+in visual reading order without mutating the saved document.
 
 `LayoutTypeRegistry` maps a layout discriminator to its responsive renderer and Inspector editor.
 `grid` renders horizontal cards, `tiles` renders centered icon tiles, and `list` renders

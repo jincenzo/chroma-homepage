@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { gamingQuerySchema } from "./gaming";
 
 export const appearanceSchema = z.object({
   accent: z.string().regex(/^#[0-9a-f]{6}$/i, "Use a six-digit hex color").optional(),
@@ -62,7 +63,23 @@ export const formulaOneCardSchema = z.object({
   refreshMinutes: z.number().int().min(30).max(1440).default(60)
 });
 
-export const cardSchema = z.discriminatedUnion("type", [linkCardSchema, formulaOneCardSchema]);
+export const gamingCardSchema = gamingQuerySchema.extend({
+  ...cardAppearanceFields,
+  type: z.literal("gaming"),
+  gameCount: z.number().int().min(1).max(20).default(5),
+  refreshMinutes: z.number().int().min(30).max(1440).default(60)
+});
+
+export const motoGpCardSchema = z.object({
+  ...cardAppearanceFields,
+  type: z.literal("motogp"),
+  view: z.enum(["next-race", "rider-standings", "favorite-rider"]).default("next-race"),
+  riderId: z.string().trim().min(1).max(128).optional(),
+  riderCount: z.number().int().min(1).max(30).default(3),
+  refreshMinutes: z.number().int().min(30).max(1440).default(60)
+});
+
+export const cardSchema = z.discriminatedUnion("type", [linkCardSchema, formulaOneCardSchema, gamingCardSchema, motoGpCardSchema]);
 
 export const gridLayoutSchema = z.object({
   type: z.literal("grid"),
@@ -82,11 +99,26 @@ export const layoutSchema = z.discriminatedUnion("type", [
   })
 ]);
 
+export const sectionBoxSchema = z.object({
+  column: z.number().int().min(1).max(12),
+  row: z.number().int().min(1).max(10000),
+  width: z.number().int().min(1).max(12),
+  height: z.number().int().min(1).max(24)
+});
+
+export const sectionGridSchema = z.object({
+  type: z.literal("bento"),
+  columns: z.number().int().min(1).max(12).default(6),
+  rowHeight: z.number().int().min(40).max(240).default(80),
+  gap: z.number().int().min(4).max(64).default(24)
+});
+
 export const sectionSchema = z.object({
   id: z.string().min(1),
   title: z.string().min(1).max(120),
   layout: layoutSchema,
   width: z.enum(["full", "two-thirds", "half", "third"]).optional(),
+  dashboardBox: sectionBoxSchema.optional(),
   appearance: appearanceSchema.optional(),
   cards: z.array(cardSchema)
 });
@@ -96,6 +128,7 @@ export const tabSchema = z.object({
   label: z.string().min(1).max(80),
   icon: z.string().min(2),
   appearance: accentAppearanceSchema.optional(),
+  sectionLayout: sectionGridSchema.optional(),
   sections: z.array(sectionSchema)
 });
 
@@ -148,10 +181,14 @@ export type Appearance = z.infer<typeof appearanceSchema>;
 export type SearchShortcut = z.infer<typeof searchShortcutSchema>;
 export type LinkCard = z.infer<typeof linkCardSchema>;
 export type FormulaOneCard = z.infer<typeof formulaOneCardSchema>;
+export type GamingCard = z.infer<typeof gamingCardSchema>;
+export type MotoGpCard = z.infer<typeof motoGpCardSchema>;
 export type Card = z.infer<typeof cardSchema>;
 export type GridLayout = z.infer<typeof gridLayoutSchema>;
 export type Layout = z.infer<typeof layoutSchema>;
 export type Section = z.infer<typeof sectionSchema>;
+export type SectionBox = z.infer<typeof sectionBoxSchema>;
+export type SectionGrid = z.infer<typeof sectionGridSchema>;
 export type Tab = z.infer<typeof tabSchema>;
 export type ChromaConfig = z.infer<typeof configSchema>;
 
