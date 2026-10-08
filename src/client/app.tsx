@@ -14,6 +14,7 @@ import { useEditorStore } from "./store/editor-store";
 
 export function App() {
   const { persisted, draft, editMode, beginEdit, acceptSaved, undo, redo, copy, cut, paste, duplicate, deleteSelection } = useEditorStore();
+  const activeTabId = useEditorStore((state) => state.activeTabId);
   const profileState = useProfiles();
   const { activeId, loading, updateProfile } = profileState;
   const [error, setError] = useState<string | null>(null);
@@ -61,7 +62,8 @@ export function App() {
   const config = editMode ? draft : persisted;
   const visibleError = error ?? profileState.error;
   if (!config) return <div className="grid min-h-screen place-items-center bg-[#080a12] text-slate-400">{visibleError ?? "Loading Chroma Homepage…"}</div>;
-  return <div style={{ "--home-accent": resolveTabAppearance(undefined, config.homepage).accent } as CSSProperties} className={`min-h-screen overflow-x-hidden ${editMode ? "pr-[320px]" : ""}`}>
+  const fitViewport = !editMode && Boolean((config.tabs.find((tab) => tab.id === activeTabId) ?? config.tabs[0])?.fitViewport);
+  return <div data-fit-viewport={fitViewport || undefined} style={{ "--home-accent": resolveTabAppearance(undefined, config.homepage).accent } as CSSProperties} className={`chroma-app min-h-screen overflow-x-hidden ${editMode ? "pr-[320px]" : ""}`}>
     <div className="ambient ambient-one" /><div className="ambient ambient-two" />
     <header data-testid="app-header" className="relative z-30 mx-auto max-w-7xl px-6 pb-5 pt-5">
       <div className="chroma-command-bar chroma-header-grid gap-3 p-2.5">
@@ -74,7 +76,7 @@ export function App() {
       </div>
     </header>
     {visibleError && <div role="alert" className="fixed left-1/2 top-5 z-[100] -translate-x-1/2 rounded-xl border border-rose-400/30 bg-rose-950/90 px-4 py-2 text-sm text-rose-200 shadow-xl">{visibleError}</div>}
-    <div inert={saving || profileState.loading} key={profileState.activeId}>
+    <div className="dashboard-stage" inert={saving || profileState.loading} key={profileState.activeId}>
     <div className="dashboard-host relative z-10 px-6 pb-28"><Dashboard config={config} editing={editMode} /></div>
     <CardLauncher config={config} disabled={editMode || profileState.loading} />
     {editMode && <><Inspector /><EditorToolbar onSave={() => void save()} saving={saving} /></>}

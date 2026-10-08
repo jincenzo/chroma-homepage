@@ -20,7 +20,7 @@ export function BentoGrid({ layout, children }: PropsWithChildren<{ layout: Bent
   const style = {
     "--bento-columns": bentoColumns(layout, width),
     "--bento-row-height": `${layout.rowHeight}px`,
-    gap: layout.gap
+    "--bento-gap": `${layout.gap}px`
   } as CSSProperties;
   return <div ref={ref} className="layout-bento" style={style}>{children}</div>;
 }

@@ -17,14 +17,14 @@ function Block({ block }: { block: RemoteBlock }) {
   return <section className="grid min-w-0 gap-2" aria-label={block.title}>
     {block.title && <h4 className="m-0 text-[10px] font-bold uppercase tracking-wider text-slate-500">{block.title}</h4>}
     {block.type === "text" && <p className="m-0 whitespace-pre-wrap break-words text-xs leading-relaxed text-slate-300">{block.text}</p>}
-    {block.type === "metrics" && <dl className="m-0 grid grid-cols-2 gap-2">{block.items.map((item, index) => <div key={index} className="min-w-0 rounded-lg bg-white/[.035] p-2.5"><dt className="break-words text-[10px] text-slate-400">{item.label}</dt><dd className={`m-0 mt-1 break-words text-lg font-semibold ${tones[item.tone]}`}>{displayValue(item.value, item.unit)}</dd></div>)}</dl>}
+    {block.type === "metrics" && <dl className="remote-metrics m-0 grid grid-cols-2 gap-2">{block.items.map((item, index) => <div key={index} className="remote-metric min-w-0 rounded-lg bg-white/[.035] p-2.5"><dt className="break-words text-[10px] text-slate-400">{item.label}</dt><dd className={`m-0 mt-1 break-words text-lg font-semibold ${tones[item.tone]}`}>{displayValue(item.value, item.unit)}</dd></div>)}</dl>}
     {block.type === "progress" && <div className="grid gap-2"><div className="flex flex-wrap justify-between gap-2 text-xs"><span className="break-words text-slate-300">{block.label}</span><strong className={tones[block.tone]}>{displayValue(block.value, block.unit)} / {displayValue(block.max, block.unit)}</strong></div><div role="progressbar" aria-label={block.label} aria-valuemin={0} aria-valuemax={block.max} aria-valuenow={block.value} className="h-1.5 overflow-hidden rounded-full bg-white/10"><div className={`h-full rounded-full ${bars[block.tone]}`} style={{ width: `${block.value / block.max * 100}%` }} /></div></div>}
-    {block.type === "list" && <dl className="m-0 grid gap-1.5">{block.items.map((item, index) => <div key={index} className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-x-3 rounded-lg bg-white/[.025] px-2.5 py-2 text-xs"><dt className="break-words text-slate-400">{item.label}</dt><dd className={`m-0 break-words text-right font-medium ${tones[item.tone]}`}>{item.value}</dd>{item.description && <dd className="col-span-2 m-0 mt-1 break-words text-[10px] text-slate-500">{item.description}</dd>}</div>)}</dl>}
+    {block.type === "list" && <dl className="remote-list m-0 grid gap-1.5">{block.items.map((item, index) => <div key={index} className="remote-list-item grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-x-3 rounded-lg bg-white/[.025] px-2.5 py-2 text-xs"><dt className="break-words text-slate-400">{item.label}</dt><dd className={`m-0 break-words text-right font-medium ${tones[item.tone]}`}>{item.value}</dd>{item.description && <dd className="col-span-2 m-0 mt-1 break-words text-[10px] text-slate-500">{item.description}</dd>}</div>)}</dl>}
   </section>;
 }
 
 export function RemotePayloadView({ data, editing }: { data: RemotePayload; editing: boolean }) {
-  return <div className="grid min-w-0 gap-4">
+  return <div className="remote-payload grid min-w-0 gap-4">
     {data.blocks.map((block, index) => <Block key={index} block={block} />)}
     {!!data.actions.length && <div className="flex flex-wrap gap-2 border-t border-white/8 pt-3">{data.actions.map((action, index) => editing
       ? <span key={index} className="break-all text-xs text-[var(--card-accent)]">{action.label}</span>
@@ -66,7 +66,7 @@ export function RemoteCardView({ card, editing }: { card: RemoteCard; editing: b
   }, [settingsKey]);
   const current = state.key === settingsKey ? state : undefined;
   const result = current?.data;
-  return <div className="grid min-h-[130px] min-w-0 gap-4" data-testid="remote-card-content">
+  return <div className="remote-card-content grid min-h-[130px] min-w-0 gap-4" data-testid="remote-card-content">
     <div className="flex flex-wrap items-start justify-between gap-2"><span className="flex min-w-0 items-center gap-2 break-words text-[11px] font-bold uppercase tracking-wider text-[var(--card-accent)]"><VisualIcon icon={card.icon} className="size-5 shrink-0" />{card.label}</span>{result?.data.status && <span className={`max-w-full break-words rounded-full bg-white/6 px-2 py-1 text-[10px] ${tones[result.data.status.tone]}`}>{result.data.status.label}</span>}</div>
     {!result && !current?.error && <span role="status" className="animate-pulse text-xs text-slate-400">Loading custom card…</span>}
     {current?.error && <p role="status" className="m-0 break-words text-xs leading-relaxed text-amber-200">{result && "Stale — showing last valid data. "}{current.error}</p>}

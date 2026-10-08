@@ -131,7 +131,7 @@ function DriverDataView({ card }: { card: FormulaOneCard }) {
 
   return <div className="chroma-f1-content flex h-full min-h-[112px] flex-col justify-between gap-3">
     <CardHeader card={card} badge={`${data.season} season`} />
-    <div className="grid gap-1.5">{data.drivers.slice(0, card.driverCount).map((driver) => <div key={driver.id} className="grid grid-cols-[24px_1fr_auto] items-center gap-2 rounded-lg bg-white/[.035] px-2.5 py-1.5">
+    <div className="f1-standings-list grid gap-1.5">{data.drivers.slice(0, card.driverCount).map((driver) => <div key={driver.id} className="grid grid-cols-[24px_1fr_auto] items-center gap-2 rounded-lg bg-white/[.035] px-2.5 py-1.5">
       <span className="text-center text-xs font-black text-[var(--card-accent)]">{driver.position}</span><span className="min-w-0 truncate text-xs font-semibold text-slate-100">{driver.givenName} {driver.familyName}<span className="ml-1.5 font-normal text-slate-500">{driver.team}</span></span><span className="text-xs font-bold text-slate-300">{driver.points} pts</span>
     </div>)}</div>
     <span className="flex items-center gap-1.5 text-[11px] text-slate-500"><Trophy className="size-3 text-[var(--card-accent)]" />Driver championship · {data.source}</span>

@@ -35,6 +35,8 @@ export function Inspector() {
     {section?.layout.type === "bento" && <Button className="mb-5 w-full" onClick={() => setBentoOpen(true)}>Open Bento studio</Button>}
     {selection && <Button className="mb-5 w-full" onClick={() => { useEditorStore.getState().select(null); sidebar.current?.scrollTo({ top: 0 }); }}><Settings2 className="size-4" />Homepage settings</Button>}
     {selection?.type === "tab" && tab && <div className="grid gap-4">
+      <label className="flex items-center justify-between gap-3 text-sm text-slate-300"><span>Fit on one screen (desktop)</span><input type="checkbox" checked={tab.fitViewport ?? false} onChange={(event) => updateDraft((config) => { const target = config.tabs.find((item) => item.id === tab.id); if (target) target.fitViewport = event.target.checked; })} className="size-4 accent-violet-500" /></label>
+      <p className="m-0 text-xs leading-relaxed text-slate-500">Sizes section and card rows to the desktop viewport. Short cards use a compact presentation; editing and smaller screens keep normal scrolling.</p>
       <Field label="Section arrangement"><Select value={tab.sectionLayout ? "bento" : "flow"} onChange={(event) => updateDraft((config) => {
         const target = config.tabs.find((item) => item.id === tab.id);
         if (!target) return;

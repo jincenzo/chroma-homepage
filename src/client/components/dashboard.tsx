@@ -3,7 +3,7 @@ import { SortableContext, sortableKeyboardCoordinates, useSortable, rectSortingS
 import { CSS } from "@dnd-kit/utilities";
 import { GripVertical, Plus } from "lucide-react";
 import { motion } from "motion/react";
-import { type CSSProperties, type ReactNode, useEffect, useRef, useState } from "react";
+import { type CSSProperties, type ReactNode, useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { Appearance, Card, ChromaConfig, Section, Tab } from "../../shared/config";
 import { createSection, findCard, moveCard } from "../../shared/operations";
 import { resolveAppearance, resolveTabAppearance } from "../../shared/presentation";
@@ -27,6 +27,20 @@ function cardStyle(appearance: Required<Appearance>): CSSProperties {
     "--icon-size": `${appearance.iconSize}px`,
     "--description-display": appearance.showDescription ? "-webkit-box" : "none"
   } as CSSProperties;
+}
+
+function fitRows(demand: number[], height: number, gap: number): string {
+  if (!demand.length) return "";
+  const budget = Math.max(0, height - gap * (demand.length - 1));
+  const base = Math.min(34, budget / demand.length);
+  const weights = demand.map((value) => Math.max(0, value - base));
+  const total = weights.reduce((sum, value) => sum + value, 0);
+  const extra = budget - base * demand.length;
+  return demand.map((_, index) => `${base + (total ? extra * weights[index] / total : extra / demand.length)}px`).join(" ");
+}
+
+function measuredRows(grid: HTMLElement): number[] {
+  return [...getComputedStyle(grid).gridTemplateRows.matchAll(/([\d.]+)px/g)].map((match) => Number(match[1]));
 }
 
 function SortableTab({ tab, active, editing, accent }: { tab: Tab; active: boolean; editing: boolean; accent: string }) {
@@ -91,6 +105,7 @@ export function Dashboard({ config, editing }: { config: ChromaConfig; editing: 
   const [draggedCard, setDraggedCard] = useState<{ card: Card; appearance: Required<Appearance> } | null>(null);
   const [draggedSection, setDraggedSection] = useState<Section | null>(null);
   const [dragging, setDragging] = useState(false);
+  const canvasRef = useRef<HTMLElement>(null);
   // A tab switch unmounts the source sortable and clears active.data.current.
   // Keep the source identity for the entire gesture, independently of the canvas.
   const source = useRef<DragData | null>(null);
@@ -98,6 +113,45 @@ export function Dashboard({ config, editing }: { config: ChromaConfig; editing: 
   const hoverTab = useRef<string | null>(null);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }));
   const tab = config.tabs.find((item) => item.id === activeTabId) ?? config.tabs[0];
+  const fitViewport = Boolean(tab?.fitViewport) && !editing;
+
+  useLayoutEffect(() => {
+    const canvas = canvasRef.current;
+    const grid = canvas?.querySelector<HTMLElement>(".section-grid, .section-bento-grid");
+    if (!fitViewport || !canvas || !grid) return;
+    const desktop = window.matchMedia("(min-width: 1024px)");
+    let frame = 0;
+    const measure = () => {
+      frame = 0;
+      if (!desktop.matches) { grid.style.gridTemplateRows = ""; for (const layout of grid.querySelectorAll<HTMLElement>(".card-grid, .card-list, .layout-bento")) layout.style.gridTemplateRows = ""; return; }
+      const layouts = [...grid.querySelectorAll<HTMLElement>(".card-grid, .card-list, .layout-bento")];
+      const previousAutoRows = grid.style.gridAutoRows;
+      grid.style.gridTemplateRows = "";
+      grid.style.gridAutoRows = "max-content";
+      for (const layout of layouts) layout.style.gridTemplateRows = "";
+      grid.dataset.fitMeasuring = "true";
+      const gap = Number.parseFloat(getComputedStyle(grid).rowGap) || 0;
+      const demand = measuredRows(grid);
+      const cardDemands = layouts.map((layout) => ({ layout, demand: measuredRows(layout) }));
+      delete grid.dataset.fitMeasuring;
+      grid.style.gridAutoRows = previousAutoRows;
+      grid.style.gridTemplateRows = fitRows(demand, canvas.clientHeight, gap);
+      for (const { layout, demand } of cardDemands) {
+        const cardGap = Number.parseFloat(getComputedStyle(layout).rowGap) || 0;
+        layout.style.gridTemplateRows = fitRows(demand, layout.clientHeight, cardGap);
+      }
+    };
+    const schedule = () => { if (!frame) frame = window.requestAnimationFrame(measure); };
+    const resize = new ResizeObserver(schedule);
+    resize.observe(canvas);
+    const changes = new MutationObserver(schedule);
+    changes.observe(canvas, { subtree: true, childList: true, characterData: true });
+    window.addEventListener("resize", schedule);
+    desktop.addEventListener("change", schedule);
+    canvas.addEventListener("load", schedule, true);
+    schedule();
+    return () => { resize.disconnect(); changes.disconnect(); window.removeEventListener("resize", schedule); desktop.removeEventListener("change", schedule); canvas.removeEventListener("load", schedule, true); if (frame) window.cancelAnimationFrame(frame); grid.style.gridTemplateRows = ""; for (const layout of grid.querySelectorAll<HTMLElement>(".card-grid, .card-list, .layout-bento")) layout.style.gridTemplateRows = ""; };
+  }, [tab.id, fitViewport]);
 
   const clearHover = () => {
     if (hoverTimer.current !== null) window.clearTimeout(hoverTimer.current);
@@ -196,9 +250,9 @@ export function Dashboard({ config, editing }: { config: ChromaConfig; editing: 
   };
 
   const tabPosition = config.homepage.tabPosition;
-  const canvas = tab && <motion.main key={tab.id} initial={dragging ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: dragging ? 0 : 0.18 }} className="dashboard-canvas dashboard-main"><TabCanvas tab={tab} editing={editing} dragging={dragging}><SortableContext items={tab.sections.map((section) => `section:${section.id}`)} strategy={rectSortingStrategy}><SectionGrid tab={tab}>{(section, boxStyle) => <SortableSection key={section.id} section={section} tab={tab} homepage={config.homepage} editing={editing} boxStyle={boxStyle} />}</SectionGrid></SortableContext>{tab.sections.length === 0 && <div className="rounded-3xl border border-dashed border-white/10 py-16 text-center text-slate-500">This tab has no sections yet.</div>}</TabCanvas></motion.main>;
+  const canvas = tab && <motion.main ref={canvasRef} key={tab.id} initial={dragging ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: dragging ? 0 : 0.18 }} className="dashboard-canvas dashboard-main"><TabCanvas tab={tab} editing={editing} dragging={dragging}><SortableContext items={tab.sections.map((section) => `section:${section.id}`)} strategy={rectSortingStrategy}><SectionGrid tab={tab} fitViewport={fitViewport}>{(section, boxStyle) => <SortableSection key={section.id} section={section} tab={tab} homepage={config.homepage} editing={editing} boxStyle={boxStyle} />}</SectionGrid></SortableContext>{tab.sections.length === 0 && <div className="rounded-3xl border border-dashed border-white/10 py-16 text-center text-slate-500">This tab has no sections yet.</div>}</TabCanvas></motion.main>;
   return <DndContext sensors={sensors} collisionDetection={collisionDetection} onDragStart={start} onDragOver={over} onDragEnd={end} onDragCancel={resetDrag}>
-    <div className="dashboard-shell" data-tab-position={tabPosition}>
+    <div className="dashboard-shell" data-tab-position={tabPosition} data-fit-viewport={fitViewport || undefined}>
       <nav className="chroma-tabs dashboard-tabs" data-position={tabPosition} aria-label="Dashboard tabs"><SortableContext items={config.tabs.map((item) => `tab:${item.id}`)}>{config.tabs.map((item) => <SortableTab key={item.id} tab={item} active={item.id === tab?.id} editing={editing} accent={resolveTabAppearance(item, config.homepage).accent} />)}</SortableContext></nav>
       {/* Keep exactly one canvas mounted: exit copies can duplicate sortable IDs after a move. */}
       {canvas}

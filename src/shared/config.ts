@@ -130,6 +130,7 @@ export const tabSchema = z.object({
   id: z.string().min(1),
   label: z.string().min(1).max(80),
   icon: z.string().min(2),
+  fitViewport: z.boolean().optional(),
   appearance: accentAppearanceSchema.optional(),
   sectionLayout: sectionGridSchema.optional(),
   sections: z.array(sectionSchema)

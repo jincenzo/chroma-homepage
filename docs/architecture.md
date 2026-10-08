@@ -95,6 +95,21 @@ and stale last-valid data are supported. Deleting credentials clears server cach
 through real HTTP. No saved profiles are modified by adding these examples.
 See [custom-card-protocol.md](custom-card-protocol.md) for schema examples and placement.
 
+### Desktop tab viewport fit
+
+`Tab.fitViewport` is an optional boolean in the existing v1 configuration; old
+documents keep their current scrolling behaviour. The tab Inspector toggles it as
+one undoable draft edit. Outside Edit Mode, a desktop media query makes the app a
+viewport-height flex column and removes page-level scrolling. The canvas fills
+the space remaining below the header and tab navigation at its normal width. A
+layout measurement pass reads the natural CSS grid tracks for sections and cards,
+then distributes the available height across those tracks according to content
+demand. The measurement repeats on viewport changes and DOM updates from API cards.
+Short cards use compact styles and remote lists/metrics use more columns. No canvas
+transform or uniform scale is applied. Saved Bento coordinates and dimensions are
+unchanged. Below 1024 px viewport width, or in Edit Mode, the original responsive
+layout and scrolling remain intact.
+
 ### Portable dashboard bundles
 
 `server/dashboard-bundle.ts` exports a validated draft as a version-1

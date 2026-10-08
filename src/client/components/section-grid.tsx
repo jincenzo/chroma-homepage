@@ -6,7 +6,7 @@ export function sectionBoxStyle(box: SectionBox): CSSProperties {
   return { gridColumn: `${box.column} / span ${box.width}`, gridRow: `${box.row} / span ${box.height}` };
 }
 
-export function SectionGrid({ tab, children }: { tab: Tab; children(section: Section, style?: CSSProperties): ReactNode }) {
+export function SectionGrid({ tab, fitViewport = false, children }: { tab: Tab; fitViewport?: boolean; children(section: Section, style?: CSSProperties): ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState<number | null>(null);
   useLayoutEffect(() => {
@@ -22,7 +22,7 @@ export function SectionGrid({ tab, children }: { tab: Tab; children(section: Sec
   const sections = boxes ? [...tab.sections].sort((a, b) => boxes[a.id].row - boxes[b.id].row || boxes[a.id].column - boxes[b.id].column) : tab.sections;
   const style: CSSProperties | undefined = layout ? {
     gridTemplateColumns: compact ? "minmax(0, 1fr)" : `repeat(${layout.columns}, minmax(0, 1fr))`,
-    gridAutoRows: compact ? "auto" : `${layout.rowHeight}px`, gap: layout.gap
+    gridAutoRows: compact ? "auto" : fitViewport ? "minmax(0, 1fr)" : `${layout.rowHeight}px`, gap: fitViewport ? Math.min(layout.gap, 12) : layout.gap
   } : undefined;
   return <div ref={ref} className={layout ? "section-bento-grid" : "section-grid"} data-compact={compact} style={style}>
     {(layout && width === null ? [] : sections).map((section) => children(section, boxes && !compact ? sectionBoxStyle(boxes[section.id]) : undefined))}

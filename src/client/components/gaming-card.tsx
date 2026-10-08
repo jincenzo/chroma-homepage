@@ -55,7 +55,7 @@ function GamingDataView({ card, editing }: { card: GamingCard; editing: boolean 
     {error && <p role="status" className="m-0 text-xs leading-relaxed text-amber-200">{data ? "Showing previously loaded offers. " : ""}{error}</p>}
     {data && <>
       {data.items.length === 0 && <p className="text-xs text-slate-400">No active {view === "free-games" ? "giveaways for this platform" : "offers for this country and store selection"}. Check back later.</p>}
-      <div className="grid gap-1.5">{data.items.slice(0, card.gameCount).map((game) => {
+      <div className="gaming-items grid gap-1.5">{data.items.slice(0, card.gameCount).map((game) => {
         const content = <>
           <GameImage key={game.imageUrl ?? "no-image"} url={game.imageUrl} free={view === "free-games"} />
           <span className="min-w-0 flex-1"><span className="block truncate text-xs font-semibold text-slate-100" title={game.title}>{game.title}</span><span className="mt-0.5 block truncate text-[10px] text-slate-400">{game.detail}</span>{game.voucher && <span className="mt-0.5 block text-[10px] text-amber-200">Code: {game.voucher}</span>}</span>

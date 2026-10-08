@@ -22,7 +22,7 @@ function GridLayout({ layout, children }: LayoutViewProps) {
 }
 
 function ListLayout({ layout, children }: LayoutViewProps) {
-  return <div className="card-list layout-list" style={{ gap: layout.gap }}>{children}</div>;
+  return <div className="card-list layout-list" style={{ "--grid-gap": `${layout.gap}px` } as CSSProperties}>{children}</div>;
 }
 
 function GridLayoutEditor({ layout, onChange }: LayoutEditorProps) {

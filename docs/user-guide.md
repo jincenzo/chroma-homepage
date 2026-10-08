@@ -284,6 +284,23 @@ and set its width to full, two thirds, half, or one third. Sections collapse
 to a single column when the canvas is narrow, including when the Inspector is open.
 Grid maximum columns limit the column count without leaving unused page width.
 
+### Fit a tab on one desktop screen
+
+In Edit Mode, select a tab and enable **Fit on one screen (desktop)**. The setting
+belongs to that tab and is undoable until **Save**. In normal desktop viewing
+(browser width at least 1024 px), Chroma gives the section grid all available
+space below the header and tab selector. It sizes each section row and each card
+row according to their content, instead of scaling the entire canvas. Short link
+cards use a compact presentation. It recalculates when the window size or API-card
+content changes. The page and sections do not scroll in this mode. Side-tab
+navigation remains separate.
+
+Editing remains scrollable so cards and Bento controls stay usable. Smaller screens
+retain the normal responsive layout and scrolling. Existing tabs remain scrollable
+until you opt them in. If a tab holds more content than can physically fit, add
+another tab or reduce the content; very short link cards omit their descriptions.
+Saved Bento sizes are not rewritten by viewport fitting.
+
 ### Bento studio
 
 To align entire sections, use **Arrange sections** in the editor toolbar. The
@@ -298,10 +315,12 @@ Cancel/Escape discards studio edits. Use the homepage **Save** to persist them.
 To restore flowing sections, select the tab and choose **Section arrangement → Flow**;
 saved Bento dimensions are retained for later use.
 
-Section boxes have fixed grid heights, keeping their edges aligned even when one
-contains more cards. Long content scrolls inside its section. Below 760 px of canvas
-width, sections stack in visual reading order and expand to fit their content without
-changing saved positions. Card layout inside each section is configured independently.
+Normally, section boxes have fixed grid heights, keeping their edges aligned even
+when one contains more cards; long content scrolls inside its section. A desktop tab
+with **Fit on one screen** instead allocates section and card row heights within
+the viewport. Below 760 px of canvas width, sections stack in visual reading order and
+expand to fit their content without changing saved positions. Card layout inside
+each section is configured independently.
 
 Choose **Bento boxes** for a section, then **Open Bento studio** in the Inspector.
 Select a box in the preview or the Box dropdown. Choose Small (1×1), Wide (2×1),
