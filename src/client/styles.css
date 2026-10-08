@@ -175,3 +175,37 @@ button { cursor: pointer; }
 ::selection { background: rgba(139, 92, 246, .35); }
 @media (max-width: 900px) { body:has(.inspector-scroll) { overflow-x: auto; } }
 @media (max-width: 640px) { .chroma-clock { border-top: 1px solid rgba(255, 255, 255, .065); } }
+/* Paper notes and collapsible section headers. */
+.chroma-link-card[data-card-type="sticky-note"] {
+  --card-padding: 0;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--note-color, #f9e795) 85%, #000);
+  border-radius: 6px 6px 18px 6px;
+  background: var(--note-color, #f9e795);
+  box-shadow: 2px 8px 20px #0003, inset 0 1px 0 #ffffff60;
+  backdrop-filter: none;
+}
+.chroma-link-card[data-card-type="sticky-note"]::before { display: none; }
+.chroma-link-card[data-card-type="sticky-note"]::after {
+  inset: auto 0 0 auto;
+  width: 20px;
+  height: 20px;
+  border-radius: 5px 0 0 0;
+  background: linear-gradient(135deg, #00000016, #ffffff60);
+  box-shadow: -2px -2px 4px #0000000a;
+  opacity: 1;
+}
+.chroma-link-card[data-card-type="sticky-note"]:hover { background: var(--note-color, #f9e795); box-shadow: 2px 12px 26px #0004; }
+.chroma-link-card[data-card-type="sticky-note"]:hover::after { left: auto; right: 0; }
+.sticky-note-content { position: relative; display: flex; height: 100%; min-height: 200px; min-width: 0; flex-direction: column; gap: 14px; padding: 24px; color: #352f32; }
+.sticky-note-title { margin: 0; padding-right: 8px; font-size: 16px; font-weight: 750; line-height: 1.35; overflow-wrap: anywhere; }
+.sticky-note-body { margin: 0; max-height: 360px; min-height: 0; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 14px; line-height: 1.7; scrollbar-width: thin; scrollbar-color: #0003 transparent; }
+.sticky-note-placeholder { font-style: italic; opacity: .5; }
+.card-grid:has(> [data-card-type="sticky-note"]) { grid-template-columns: repeat(auto-fill, minmax(min(100%, max(var(--card-min, 180px), var(--column-min))), 1fr)); }
+.layout-bento .sticky-note-content { min-height: 0; }
+.dashboard-shell[data-fit-viewport="true"] .sticky-note-content { min-height: 0; padding: 14px; }
+.dashboard-section[data-collapsed="true"] { align-self: start; }
+.dashboard-section[data-collapsed="true"] > .section-header { margin-bottom: 0; }
+@media (min-width: 1024px) {
+  .dashboard-shell[data-fit-viewport="true"] .section-header > button { padding-block: 2px; }
+}

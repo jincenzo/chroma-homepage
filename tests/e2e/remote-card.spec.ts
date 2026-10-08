@@ -10,6 +10,7 @@ test("adds a custom card, tests the real mock endpoint, saves a credential secur
   await page.goto("/");
   await page.getByTestId("profile-switcher").click();
   await page.getByRole("menuitem", { name: "Homepage settings", exact: true }).click();
+  await page.getByRole("button", { name: "Add new item", exact: true }).click();
   await page.getByTestId("add-remote-card").click();
   const card = page.getByTestId("remote-card-content");
   await expect(card.getByText("Demo · Home secure")).toBeVisible();

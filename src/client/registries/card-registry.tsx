@@ -1,5 +1,5 @@
 import { type ComponentType, useState } from "react";
-import type { Card, FormulaOneCard, GamingCard, LinkCard, MotoGpCard, RemoteCard } from "../../shared/config";
+import type { Card, FormulaOneCard, GamingCard, LinkCard, MotoGpCard, RemoteCard, StickyNoteCard } from "../../shared/config";
 import { VisualIcon } from "../components/visual-icon";
 import { Field, Input } from "../components/ui";
 import { IconPicker } from "../components/icon-picker";
@@ -8,6 +8,7 @@ import { FormulaOneCardEditor, FormulaOneCardView } from "../components/formula-
 import { GamingCardEditor, GamingCardView } from "../components/gaming-card";
 import { MotoGpCardEditor, MotoGpCardView } from "../components/motogp-card";
 import { RemoteCardEditor, RemoteCardView } from "../components/remote-card";
+import { StickyNoteCardEditor, StickyNoteCardView } from "../components/sticky-note-card";
 
 interface CardViewProps { card: Card; editing: boolean }
 interface CardEditorProps { card: Card; onChange(card: Card): void }
@@ -59,6 +60,11 @@ function KeywordsInput({ value, onChange, placeholder }: { value: string[]; onCh
 }
 
 export const CardTypeRegistry: Record<Card["type"], CardDefinition> = {
+  "sticky-note": {
+    label: "Post-it",
+    Renderer: ({ card, editing }) => <StickyNoteCardView card={card as StickyNoteCard} editing={editing} />,
+    Editor: ({ card, onChange }) => <StickyNoteCardEditor key={card.id} card={card as StickyNoteCard} onChange={onChange} />
+  },
   link: { label: "Link", Renderer: LinkCardView, Editor: LinkCardEditor },
   "remote-data": {
     label: "Custom · Remote JSON",

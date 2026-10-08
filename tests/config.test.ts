@@ -1,11 +1,23 @@
 import { describe, expect, it } from "vitest";
-import { configSchema, parseConfig } from "../src/shared/config";
+import { configSchema, parseConfig, stickyNoteCardSchema } from "../src/shared/config";
+import { createStickyNoteCard } from "../src/shared/operations";
 import { CURRENT_SCHEMA_VERSION, migrateConfig, registeredMigrationVersions } from "../src/shared/migrations";
 import { fixtureConfig } from "./fixtures";
 
 describe("configuration schema", () => {
   it("accepts a valid hierarchical document", () => {
     expect(parseConfig(fixtureConfig()).tabs).toHaveLength(2);
+  });
+
+  it("round-trips note content and colors and validates imported notes", () => {
+    const config = fixtureConfig();
+    const note = { ...createStickyNoteCard(), content: "A reminder\n<script>plain text</script>", color: "pink" as const };
+    config.tabs[0].sections[0].cards.push(note);
+    expect(parseConfig(JSON.parse(JSON.stringify(config))).tabs[0].sections[0].cards.at(-1)).toEqual(note);
+    expect(stickyNoteCardSchema.safeParse({ ...note, color: "unknown" }).success).toBe(false);
+    expect(stickyNoteCardSchema.safeParse({ ...note, content: "x".repeat(10001) }).success).toBe(false);
+    const minimal = { ...note, color: undefined, content: undefined };
+    expect(stickyNoteCardSchema.parse(minimal)).toMatchObject({ color: "yellow", content: "" });
   });
 
   it("defaults legacy tab navigation to the top and accepts both side rails", () => {

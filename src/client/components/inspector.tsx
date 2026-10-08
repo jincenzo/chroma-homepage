@@ -66,7 +66,7 @@ export function Inspector() {
       <AppearanceEditor inherited={resolveTabAppearance(tab, draft.homepage)} value={section.appearance} onChange={(appearance) => updateSection({ appearance })} />
     </div>}
     {selection?.type === "card" && card && <div className="grid gap-5"><p className="rounded-lg bg-white/5 px-3 py-2 text-xs text-slate-400">Type: {CardTypeRegistry[card.type].label}</p>{(() => { const Editor = CardTypeRegistry[card.type].Editor; return <Editor card={card} onChange={(updated) => updateDraft((config) => { const target = config.tabs.flatMap((item) => item.sections).flatMap((item) => item.cards).find((item) => item.id === card.id); if (target) Object.assign(target, updated); })} />; })()}</div>}
-    {selection?.type === "card" && card && <AppearanceEditor key={card.id} card icon={card.icon} inherited={resolveSectionAppearance(section, tab, draft.homepage)} value={card.appearance} onChange={(appearance) => updateDraft((config) => {
+    {selection?.type === "card" && card && card.type !== "sticky-note" && <AppearanceEditor key={card.id} card icon={card.icon} inherited={resolveSectionAppearance(section, tab, draft.homepage)} value={card.appearance} onChange={(appearance) => updateDraft((config) => {
       const target = config.tabs.flatMap((item) => item.sections).flatMap((item) => item.cards).find((item) => item.id === card.id);
       if (target) target.appearance = appearance;
     })} />}

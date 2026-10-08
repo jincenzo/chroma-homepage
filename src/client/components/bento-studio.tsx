@@ -4,6 +4,7 @@ import { bentoSize, type BentoLayout } from "../../shared/bento";
 import { sectionSchema, type Section } from "../../shared/config";
 import { resolveAppearance } from "../../shared/presentation";
 import { CardRenderer } from "../registries/card-registry";
+import { noteColors } from "./sticky-note-card";
 import { useEditorStore } from "../store/editor-store";
 import { BentoGrid, bentoBoxStyle } from "./bento-grid";
 import { Button, Field, Input, Select } from "./ui";
@@ -63,9 +64,9 @@ export function BentoStudio({ section, selectedId, onClose }: { section: Section
           {working.cards.map((item) => {
             const appearance = resolveAppearance(item, working, sourceTab, draft?.homepage);
             const dimensions = bentoSize(item);
-            return <button type="button" key={item.id} aria-label={`Resize ${item.label}`} aria-pressed={item.id === activeId} onClick={() => setActiveId(item.id)} data-surface={appearance.surface} data-density={appearance.density}
+            return <button type="button" key={item.id} aria-label={`Resize ${item.label}`} aria-pressed={item.id === activeId} onClick={() => setActiveId(item.id)} data-card-type={item.type} data-surface={appearance.surface} data-density={appearance.density}
               className={`chroma-link-card bento-preview-card relative overflow-hidden rounded-[22px] text-left ${item.id === activeId ? "ring-2 ring-violet-400 ring-offset-2 ring-offset-[#10131e]" : ""}`}
-              style={{ ...bentoBoxStyle(item), "--card-accent": appearance.accent, "--icon-size": `${appearance.iconSize}px`, "--description-display": appearance.showDescription ? "-webkit-box" : "none" } as CSSProperties}>
+              style={{ ...bentoBoxStyle(item), ...(item.type === "sticky-note" ? { "--note-color": noteColors[item.color] } : {}), "--card-accent": appearance.accent, "--icon-size": `${appearance.iconSize}px`, "--description-display": appearance.showDescription ? "-webkit-box" : "none" } as CSSProperties}>
               <span className="pointer-events-none"><CardRenderer card={item} editing /></span>
               <span className="absolute right-2 top-2 rounded-md bg-black/40 px-1.5 py-0.5 text-[10px] text-slate-300">{dimensions.width} × {dimensions.height}</span>
             </button>;

@@ -82,7 +82,14 @@ export const motoGpCardSchema = z.object({
 
 export const remoteCardSchema = remoteSettingsSchema.extend({ ...cardAppearanceFields, type: z.literal("remote-data") });
 
-export const cardSchema = z.discriminatedUnion("type", [linkCardSchema, formulaOneCardSchema, gamingCardSchema, motoGpCardSchema, remoteCardSchema]);
+export const stickyNoteCardSchema = z.object({
+  ...cardAppearanceFields,
+  type: z.literal("sticky-note"),
+  content: z.string().max(10000).default(""),
+  color: z.enum(["yellow", "peach", "pink", "lavender", "blue", "mint"]).default("yellow")
+});
+
+export const cardSchema = z.discriminatedUnion("type", [linkCardSchema, formulaOneCardSchema, gamingCardSchema, motoGpCardSchema, remoteCardSchema, stickyNoteCardSchema]);
 
 export const gridLayoutSchema = z.object({
   type: z.literal("grid"),
@@ -188,6 +195,7 @@ export type FormulaOneCard = z.infer<typeof formulaOneCardSchema>;
 export type GamingCard = z.infer<typeof gamingCardSchema>;
 export type MotoGpCard = z.infer<typeof motoGpCardSchema>;
 export type RemoteCard = z.infer<typeof remoteCardSchema>;
+export type StickyNoteCard = z.infer<typeof stickyNoteCardSchema>;
 export type Card = z.infer<typeof cardSchema>;
 export type GridLayout = z.infer<typeof gridLayoutSchema>;
 export type Layout = z.infer<typeof layoutSchema>;

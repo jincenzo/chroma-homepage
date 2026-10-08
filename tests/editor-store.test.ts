@@ -58,4 +58,46 @@ describe("editor history", () => {
     expect(card).toMatchObject({ type: "formula-one", view: "next-race", driverCount: 3, label: "Next F1 race", refreshMinutes: 60 });
     expect(useEditorStore.getState().selection).toMatchObject({ type: "card", cardId: card?.id });
   });
+
+  it("creates a post-it board in one undoable step and keeps notes through copies", () => {
+    const original = fixtureConfig();
+    useEditorStore.getState().beginEdit();
+    useEditorStore.getState().addTab("board");
+    const state = useEditorStore.getState();
+    const board = state.draft!.tabs.at(-1)!;
+    const note = board.sections[0].cards[0];
+    expect(note.type).toBe("sticky-note");
+    expect(state.activeTabId).toBe(board.id);
+    expect(state.history).toHaveLength(1);
+    useEditorStore.getState().undo();
+    expect(useEditorStore.getState().draft).toEqual(original);
+    useEditorStore.getState().redo();
+    useEditorStore.getState().select({ type: "card", tabId: board.id, sectionId: board.sections[0].id, cardId: note.id });
+    useEditorStore.getState().updateDraft((draft) => {
+      const card = draft.tabs.at(-1)!.sections[0].cards[0];
+      if (card.type === "sticky-note") { card.content = "First line\nSecond line"; card.color = "mint"; }
+    });
+    useEditorStore.getState().duplicate();
+    const cards = useEditorStore.getState().draft!.tabs.at(-1)!.sections[0].cards;
+    expect(cards).toHaveLength(2);
+    expect(cards[1]).toMatchObject({ type: "sticky-note", content: "First line\nSecond line", color: "mint" });
+    expect(cards[1].id).not.toBe(cards[0].id);
+    expect(useEditorStore.getState().persisted).toEqual(original);
+  });
+
+  it("adds to the active tab despite a stale section selection and handles empty tabs", () => {
+    useEditorStore.getState().beginEdit();
+    useEditorStore.getState().select({ type: "section", tabId: "tab-a", sectionId: "section-a" });
+    useEditorStore.getState().setActiveTab("tab-b");
+    useEditorStore.getState().addCard("sticky-note");
+    expect(useEditorStore.getState().draft!.tabs[0].sections[0].cards).toHaveLength(1);
+    expect(useEditorStore.getState().draft!.tabs[1].sections[0].cards.at(-1)).toMatchObject({ type: "sticky-note" });
+    useEditorStore.getState().updateDraft((draft) => { draft.tabs[1].sections = []; });
+    const empty = structuredClone(useEditorStore.getState().draft);
+    useEditorStore.getState().addCard("sticky-note");
+    expect(useEditorStore.getState().draft!.tabs[1].sections).toHaveLength(1);
+    expect(useEditorStore.getState().draft!.tabs[1].sections[0].cards).toHaveLength(1);
+    useEditorStore.getState().undo();
+    expect(useEditorStore.getState().draft).toEqual(empty);
+  });
 });

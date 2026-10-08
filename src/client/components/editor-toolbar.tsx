@@ -1,4 +1,4 @@
-import { Download, History, Plus, Redo2, Save, Undo2, Upload, X } from "lucide-react";
+import { Download, History, Redo2, Save, StickyNote, Undo2, Upload, X } from "lucide-react";
 import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { MAX_BUNDLE_BYTES } from "../../shared/dashboard-bundle";
 import { exportDashboardBundle, importDashboardBundle } from "../lib/api";
@@ -6,9 +6,10 @@ import { useEditorStore } from "../store/editor-store";
 import { Button } from "./ui";
 import { HistoryImporter } from "./history-importer";
 import { SectionBentoStudio } from "./section-bento-studio";
+import { AddMenu } from "./add-menu";
 
 export function EditorToolbar({ onSave, saving }: { onSave(): void; saving: boolean }) {
-  const { draft, history, future, cancelEdit, undo, redo, addTab, addSection, addCard, replaceDraft } = useEditorStore();
+  const { draft, history, future, cancelEdit, undo, redo, addCard, replaceDraft } = useEditorStore();
   const mounted = useRef(true);
   const transfer = useRef<AbortController | null>(null);
   const [transferring, setTransferring] = useState<"export" | "import" | null>(null);
@@ -67,14 +68,9 @@ export function EditorToolbar({ onSave, saving }: { onSave(): void; saving: bool
     <Button aria-label="Undo" title="Undo" onClick={undo} disabled={!history.length} className="size-9 px-0"><Undo2 className="size-4" /></Button>
     <Button aria-label="Redo" title="Redo" onClick={redo} disabled={!future.length} className="size-9 px-0"><Redo2 className="size-4" /></Button>
     <span className="mx-1 h-6 w-px bg-white/10" />
-    <Button onClick={addTab}><Plus className="size-4" />Tab</Button>
-    <Button onClick={addSection}><Plus className="size-4" />Section</Button>
+    <AddMenu />
+    <Button onClick={() => addCard("sticky-note")} aria-label="Quick add post-it" title="Add a post-it to the selected section"><StickyNote className="size-4" />Post-it</Button>
     <Button disabled={!tab} onClick={() => setSectionStudioOpen(true)}>Arrange sections</Button>
-    <Button onClick={() => addCard("link")} data-testid="add-card"><Plus className="size-4" />Link</Button>
-    <Button onClick={() => addCard("formula-one")} data-testid="add-f1-card"><Plus className="size-4" />F1</Button>
-    <Button onClick={() => addCard("gaming")} data-testid="add-gaming-card"><Plus className="size-4" />Gaming</Button>
-    <Button onClick={() => addCard("motogp")} data-testid="add-motogp-card"><Plus className="size-4" />MotoGP</Button>
-    <Button onClick={() => addCard("remote-data")} data-testid="add-remote-card"><Plus className="size-4" />Custom</Button>
     <span className="mx-1 h-6 w-px bg-white/10" />
     <Button onClick={() => void exportConfig()} disabled={!!transferring} aria-label="Export configuration" title="Export dashboard ZIP (includes images, excludes API keys)" className="size-9 px-0"><Download className={`size-4 ${transferring === "export" ? "animate-pulse" : ""}`} /></Button>
     <Button disabled={!!transferring} aria-label="Import configuration" title="Import dashboard ZIP or legacy JSON" className="relative size-9 overflow-hidden px-0"><Upload className={`size-4 ${transferring === "import" ? "animate-pulse" : ""}`} /><input aria-label="Dashboard ZIP or JSON file" disabled={!!transferring} type="file" accept="application/zip,.zip,application/json,.json" className="absolute inset-0 cursor-pointer opacity-0" onChange={(event) => void importConfig(event)} /></Button>

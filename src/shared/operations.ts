@@ -1,4 +1,4 @@
-import type { Card, ChromaConfig, Section, Tab } from "./config";
+import type { Card, ChromaConfig, Section, StickyNoteCard, Tab } from "./config";
 import { createId } from "./id";
 import { arrangeSections, positionSection } from "./section-bento";
 
@@ -124,6 +124,14 @@ export function createSection(): Section {
   return { id: createId(), title: "New section", layout: { type: "grid", minCardWidth: 180, gap: 16 }, cards: [] };
 }
 
-export function createTab(): Tab {
+export function createStickyNoteCard(): StickyNoteCard {
+  return { id: createId(), type: "sticky-note", label: "New post-it", content: "", color: "yellow", icon: { type: "iconify", value: "lucide:sticky-note" }, bento: { width: 1, height: 2 } };
+}
+
+export function createTab(kind: "dashboard" | "board" = "dashboard"): Tab {
+  if (kind === "board") return {
+    id: createId(), label: "Post-it board", icon: "lucide:sticky-note",
+    sections: [{ ...createSection(), title: "My notes", layout: { type: "grid", minCardWidth: 220, gap: 20, maxColumns: 4 }, cards: [createStickyNoteCard()] }]
+  };
   return { id: createId(), label: "New tab", icon: "lucide:layout-dashboard", sections: [createSection()] };
 }

@@ -25,6 +25,7 @@ test("adds a live Formula 1 card and manages its server-side credential", async 
   await page.goto("/");
   await page.getByTestId("profile-switcher").click();
   await page.getByRole("menuitem", { name: "Homepage settings", exact: true }).click();
+  await page.getByRole("button", { name: "Add new item", exact: true }).click();
   await page.getByTestId("add-f1-card").click();
   const card = page.getByText("Italian Grand Prix", { exact: true });
   await expect(card).toBeVisible();

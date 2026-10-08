@@ -77,6 +77,15 @@ under `/data`. Back up the whole directory to keep everything portable.
 3. Drag cards or section grips. Hover another tab for about **500 ms** to move across tabs.
 4. **Save** when you are happy, or **Cancel** to discard the session.
 
+Use **+** next to the tabs, or **+ Add** in the editor, to create a tab, section,
+or any card type from one popup. Choose **Post-it board** for a tab ready for
+notes. Post-its have a title, multiline text, and six paper colors; the post-it
+button in each section header and the editor toolbar adds another note quickly.
+Use a note's pencil button to edit it, then **Save** to keep your changes.
+
+The chevron in each section header collapses or expands its cards. This works
+outside the editor too, and the browser remembers collapsed sections per profile.
+
 To put the icon above the label, select the **section title**, then choose
 **Layout → Presentation → Icon tiles**. Choose **Horizontal cards** for icons on
 the left, or **Compact list** for short rows. Presentation currently applies to
@@ -120,7 +129,7 @@ asset directory. They are separate dashboards, **not separate user accounts**.
 
 ### Connect your own data
 
-Select a section in Edit Mode and click **Custom** for a remote JSON card. Try the
+Select a section in Edit Mode and choose **+ Add → Custom card** for a remote JSON card. Try the
 built-in house demo, then connect your own endpoint with optional encrypted Bearer
 or X-API-Key authentication. See the [custom card protocol](docs/custom-card-protocol.md)
 for a complete example and a diagram showing where each field appears.

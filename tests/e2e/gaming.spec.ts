@@ -23,6 +23,7 @@ test("adds Gaming, configures both providers, manages keys and persists without 
   await page.goto("/");
   await page.getByTestId("profile-switcher").click();
   await page.getByRole("menuitem", { name: "Homepage settings", exact: true }).click();
+  await page.getByRole("button", { name: "Add new item", exact: true }).click();
   await page.getByTestId("add-gaming-card").click();
   await expect(page.getByText("Free game 5", { exact: true })).toBeVisible();
   const artwork = page.getByTestId("gaming-content").locator("img").first();

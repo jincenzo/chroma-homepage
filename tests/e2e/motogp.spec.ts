@@ -17,6 +17,7 @@ test("adds MotoGP and persists race, leaders and favourite-rider settings", asyn
   await page.goto("/");
   await page.getByTestId("profile-switcher").click();
   await page.getByRole("menuitem", { name: "Homepage settings", exact: true }).click();
+  await page.getByRole("button", { name: "Add new item", exact: true }).click();
   await page.getByTestId("add-motogp-card").click();
   await expect(page.getByText("Grand Prix of Japan", { exact: true })).toBeVisible();
   await expect(page.getByText("Mobility Resort Motegi · Japan", { exact: true })).toBeVisible();

@@ -1,7 +1,7 @@
 import { closestCenter, pointerWithin, DndContext, DragOverlay, KeyboardSensor, PointerSensor, useDndContext, useDroppable, useSensor, useSensors, type CollisionDetection, type DragEndEvent, type DragOverEvent, type DragStartEvent } from "@dnd-kit/core";
 import { SortableContext, sortableKeyboardCoordinates, useSortable, rectSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, Plus } from "lucide-react";
+import { ChevronDown, ChevronRight, GripVertical, Plus, StickyNote } from "lucide-react";
 import { motion } from "motion/react";
 import { type CSSProperties, type ReactNode, useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { Appearance, Card, ChromaConfig, Section, Tab } from "../../shared/config";
@@ -14,6 +14,8 @@ import { useEditorStore } from "../store/editor-store";
 import { VisualIcon } from "./visual-icon";
 import { bentoBoxStyle } from "./bento-grid";
 import { SectionGrid } from "./section-grid";
+import { AddMenu } from "./add-menu";
+import { noteColors } from "./sticky-note-card";
 
 type DragData =
   | { kind: "tab"; tabId: string }
@@ -60,12 +62,12 @@ function SortableCard({ card, tabId, section, editing, appearance }: { card: Car
   const selection = useEditorStore((state) => state.selection);
   const select = useEditorStore((state) => state.select);
   const selected = selection?.type === "card" && selection.cardId === card.id;
-  return <motion.article layout data-surface={appearance.surface} data-density={appearance.density} data-testid={`card-${card.id}`} ref={setNodeRef} style={{ ...cardStyle(appearance), ...(section.layout.type === "bento" ? bentoBoxStyle(card) : {}), transform: CSS.Transform.toString(transform), transition, touchAction: editing ? "none" : undefined }} {...(editing ? attributes : {})} {...(editing ? listeners : {})} onClick={(event) => { if (editing) { event.preventDefault(); select({ type: "card", tabId, sectionId, cardId: card.id }); } }} className={cn("chroma-link-card relative overflow-hidden rounded-[22px]", editing && "cursor-grab ring-offset-2 ring-offset-[#090b13] active:cursor-grabbing", selected && "ring-2 ring-violet-400/55", isDragging && "opacity-20")}>
+  return <motion.article layout data-card-type={card.type} data-surface={appearance.surface} data-density={appearance.density} data-testid={`card-${card.id}`} ref={setNodeRef} style={{ ...cardStyle(appearance), ...(card.type === "sticky-note" ? { "--note-color": noteColors[card.color] } : {}), ...(section.layout.type === "bento" ? bentoBoxStyle(card) : {}), transform: CSS.Transform.toString(transform), transition, touchAction: editing ? "none" : undefined }} {...(editing ? attributes : {})} {...(editing ? listeners : {})} onClick={(event) => { if (editing) { event.preventDefault(); select({ type: "card", tabId, sectionId, cardId: card.id }); } }} className={cn("chroma-link-card relative overflow-hidden rounded-[22px]", editing && "cursor-grab ring-offset-2 ring-offset-[#090b13] active:cursor-grabbing", selected && "ring-2 ring-violet-400/55", isDragging && "opacity-20")}>
     {editing && <GripVertical className="absolute right-2 top-2 size-4 text-slate-600" />}<CardRenderer card={card} editing={editing} />
   </motion.article>;
 }
 
-function SortableSection({ section, tab, homepage, editing, boxStyle }: { section: Section; tab: Tab; homepage: ChromaConfig["homepage"]; editing: boolean; boxStyle?: CSSProperties }) {
+function SortableSection({ section, tab, homepage, editing, boxStyle, collapsed, onCollapse }: { section: Section; tab: Tab; homepage: ChromaConfig["homepage"]; editing: boolean; boxStyle?: CSSProperties; collapsed: boolean; onCollapse(collapsed: boolean): void }) {
   const tabId = tab.id;
   const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({ id: `section:${section.id}`, data: { kind: "section", tabId, sectionId: section.id } satisfies DragData, disabled: !editing });
   const { over } = useDndContext();
@@ -74,16 +76,30 @@ function SortableSection({ section, tab, homepage, editing, boxStyle }: { sectio
   const selection = useEditorStore((state) => state.selection);
   const select = useEditorStore((state) => state.select);
   const selected = selection?.type === "section" && selection.sectionId === section.id;
-  return <motion.section layout={!tab.sectionLayout} ref={setNodeRef} style={{ ...boxStyle, transform: CSS.Transform.toString(transform), transition }} data-width={section.width ?? "full"} data-testid={`section-${section.id}`} onClick={(event) => { if (editing && event.target === event.currentTarget) select({ type: "section", tabId, sectionId: section.id }); }} className={cn("dashboard-section min-w-0 rounded-[26px] py-2 transition", editing && "border border-dashed border-white/12 p-4", selected && "border-violet-400/60 bg-violet-500/[.04]", isOver && editing && "border-emerald-400/70 bg-emerald-400/[.06]", isDragging && "opacity-30")}>
-    <div className="mb-4 flex items-center gap-2"><h2 onClick={() => editing && select({ type: "section", tabId, sectionId: section.id })} className="text-sm font-semibold uppercase tracking-[.14em] text-slate-400">{section.title}</h2>{editing && <button type="button" aria-label="Drag section" title="Drag to reorder or move to another tab" className="touch-none cursor-grab rounded-md p-1 text-slate-400 hover:bg-white/10" {...attributes} {...listeners}><GripVertical className="size-4" /></button>}</div>
-    <div className="section-card-content"><SortableContext items={section.cards.map((card) => `card:${card.id}`)} strategy={rectSortingStrategy}>
-      <LayoutRenderer layout={section.layout}>{section.cards.map((card) => <SortableCard key={card.id} card={card} tabId={tabId} section={section} editing={editing} appearance={resolveAppearance(card, section, tab, homepage)} />)}{editing && section.cards.length === 0 && <button type="button" onClick={() => select({ type: "section", tabId, sectionId: section.id })} className="grid min-h-20 place-items-center rounded-2xl border border-dashed border-white/10 text-sm text-slate-600"><span className="flex items-center gap-2"><Plus className="size-4" />Select section, then add a link</span></button>}</LayoutRenderer>
-    </SortableContext></div>
+  const addNote = () => {
+    const store = useEditorStore.getState();
+    if (!store.editMode) store.beginEdit();
+    store.setActiveTab(tabId);
+    store.select({ type: "section", tabId, sectionId: section.id });
+    store.addCard("sticky-note");
+    onCollapse(false);
+  };
+  return <motion.section layout={!tab.sectionLayout} ref={setNodeRef} style={{ ...boxStyle, ...(collapsed ? { alignSelf: "start" } : {}), transform: CSS.Transform.toString(transform), transition }} data-collapsed={collapsed || undefined} data-width={section.width ?? "full"} data-testid={`section-${section.id}`} onClick={(event) => { if (editing && event.target === event.currentTarget) select({ type: "section", tabId, sectionId: section.id }); }} className={cn("dashboard-section min-w-0 rounded-[26px] py-2 transition", editing && "border border-dashed border-white/12 p-4", selected && "border-violet-400/60 bg-violet-500/[.04]", isOver && editing && "border-emerald-400/70 bg-emerald-400/[.06]", isDragging && "opacity-30")}>
+    <div className={cn("section-header flex items-center gap-2", !collapsed && "mb-4")}>
+      <button type="button" aria-label={`${collapsed ? "Expand" : "Collapse"} ${section.title}`} aria-expanded={!collapsed} aria-controls={`section-content-${section.id}`} onClick={() => onCollapse(!collapsed)} className="shrink-0 rounded-lg p-1.5 text-slate-400 transition hover:bg-white/10 hover:text-white">{collapsed ? <ChevronRight className="size-4" /> : <ChevronDown className="size-4" />}</button>
+      <h2 onClick={() => editing && select({ type: "section", tabId, sectionId: section.id })} className="min-w-0 truncate text-sm font-semibold uppercase tracking-[.14em] text-slate-400" title={section.title}>{section.title}</h2>
+      {collapsed && <span className="text-xs text-slate-500">{section.cards.length}</span>}
+      {editing && <button type="button" aria-label="Drag section" title="Drag to reorder or move to another tab" className="touch-none cursor-grab rounded-md p-1 text-slate-400 hover:bg-white/10" {...attributes} {...listeners}><GripVertical className="size-4" /></button>}
+      <button type="button" aria-label={`Add post-it to ${section.title}`} title="Quick add post-it" onClick={addNote} className="ml-auto flex shrink-0 items-center gap-1 rounded-lg border border-white/8 px-2 py-1.5 text-slate-400 transition hover:border-yellow-200/30 hover:bg-yellow-200/10 hover:text-yellow-100"><Plus className="size-3.5" /><StickyNote className="size-3.5" /></button>
+    </div>
+    <div id={`section-content-${section.id}`} hidden={collapsed} className="section-card-content">{!collapsed && <SortableContext items={section.cards.map((card) => `card:${card.id}`)} strategy={rectSortingStrategy}>
+      <LayoutRenderer layout={section.layout}>{section.cards.map((card) => <SortableCard key={card.id} card={card} tabId={tabId} section={section} editing={editing} appearance={resolveAppearance(card, section, tab, homepage)} />)}{editing && section.cards.length === 0 && <button type="button" onClick={addNote} className="grid min-h-20 place-items-center rounded-2xl border border-dashed border-white/10 text-sm text-slate-500"><span className="flex items-center gap-2"><Plus className="size-4" />Add your first post-it</span></button>}</LayoutRenderer>
+    </SortableContext>}</div>
   </motion.section>;
 }
 
 function CardOverlay({ card, appearance }: { card: Card; appearance: Required<Appearance> }) {
-  return <div data-testid="card-drag-overlay" style={cardStyle(appearance)} className="w-64 rotate-2 rounded-[20px] border border-violet-300/40 bg-[#171a28]/95 p-4 shadow-2xl backdrop-blur-xl"><CardRenderer card={card} editing /></div>;
+  return <div data-testid="card-drag-overlay" data-card-type={card.type} style={{ ...cardStyle(appearance), ...(card.type === "sticky-note" ? { "--note-color": noteColors[card.color] } : {}) } as CSSProperties} className={cn("w-64 rotate-2 rounded-[20px] shadow-2xl", card.type === "sticky-note" ? "chroma-link-card" : "border border-violet-300/40 bg-[#171a28]/95 p-4 backdrop-blur-xl")}><CardRenderer card={card} editing /></div>;
 }
 
 function TabCanvas({ tab, editing, dragging, children }: { tab: Tab; editing: boolean; dragging: boolean; children: ReactNode }) {
@@ -94,7 +110,24 @@ function TabCanvas({ tab, editing, dragging, children }: { tab: Tab; editing: bo
   </div>;
 }
 
-export function Dashboard({ config, editing }: { config: ChromaConfig; editing: boolean }) {
+export function Dashboard({ config, editing, profileId }: { config: ChromaConfig; editing: boolean; profileId: string }) {
+  const collapseKey = `chroma.collapsed-sections.${profileId}`;
+  const [collapsedSections, setCollapsedSections] = useState<string[]>(() => {
+    try { const stored: unknown = JSON.parse(localStorage.getItem(collapseKey) ?? "[]"); return Array.isArray(stored) ? stored.filter((id): id is string => typeof id === "string") : []; } catch { return []; }
+  });
+  const collapse = (id: string, collapsed: boolean) => setCollapsedSections((current) => {
+    const next = collapsed ? [...new Set([...current, id])] : current.filter((item) => item !== id);
+    return next;
+  });
+  useEffect(() => {
+    try { localStorage.setItem(collapseKey, JSON.stringify(collapsedSections)); } catch { /* Collapsing still works when browser storage is unavailable. */ }
+  }, [collapseKey, collapsedSections]);
+  useEffect(() => useEditorStore.subscribe((state, previous) => {
+    const selection = state.selection;
+    if (state.editMode && selection?.type === "card" && selection !== previous.selection) {
+      setCollapsedSections((current) => current.includes(selection.sectionId) ? current.filter((id) => id !== selection.sectionId) : current);
+    }
+  }), []);
   const activeTabId = useEditorStore((state) => state.activeTabId);
   const setActiveTab = useEditorStore((state) => state.setActiveTab);
   const move = useEditorStore((state) => state.moveCard);
@@ -151,7 +184,7 @@ export function Dashboard({ config, editing }: { config: ChromaConfig; editing: 
     canvas.addEventListener("load", schedule, true);
     schedule();
     return () => { resize.disconnect(); changes.disconnect(); window.removeEventListener("resize", schedule); desktop.removeEventListener("change", schedule); canvas.removeEventListener("load", schedule, true); if (frame) window.cancelAnimationFrame(frame); grid.style.gridTemplateRows = ""; for (const layout of grid.querySelectorAll<HTMLElement>(".card-grid, .card-list, .layout-bento")) layout.style.gridTemplateRows = ""; };
-  }, [tab.id, fitViewport]);
+  }, [tab.id, fitViewport, collapsedSections]);
 
   const clearHover = () => {
     if (hoverTimer.current !== null) window.clearTimeout(hoverTimer.current);
@@ -250,10 +283,10 @@ export function Dashboard({ config, editing }: { config: ChromaConfig; editing: 
   };
 
   const tabPosition = config.homepage.tabPosition;
-  const canvas = tab && <motion.main ref={canvasRef} key={tab.id} initial={dragging ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: dragging ? 0 : 0.18 }} className="dashboard-canvas dashboard-main"><TabCanvas tab={tab} editing={editing} dragging={dragging}><SortableContext items={tab.sections.map((section) => `section:${section.id}`)} strategy={rectSortingStrategy}><SectionGrid tab={tab} fitViewport={fitViewport}>{(section, boxStyle) => <SortableSection key={section.id} section={section} tab={tab} homepage={config.homepage} editing={editing} boxStyle={boxStyle} />}</SectionGrid></SortableContext>{tab.sections.length === 0 && <div className="rounded-3xl border border-dashed border-white/10 py-16 text-center text-slate-500">This tab has no sections yet.</div>}</TabCanvas></motion.main>;
+  const canvas = tab && <motion.main ref={canvasRef} key={tab.id} initial={dragging ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: dragging ? 0 : 0.18 }} className="dashboard-canvas dashboard-main"><TabCanvas tab={tab} editing={editing} dragging={dragging}><SortableContext items={tab.sections.map((section) => `section:${section.id}`)} strategy={rectSortingStrategy}><SectionGrid tab={tab} fitViewport={fitViewport}>{(section, boxStyle) => <SortableSection key={section.id} section={section} tab={tab} homepage={config.homepage} editing={editing} boxStyle={boxStyle} collapsed={collapsedSections.includes(section.id)} onCollapse={(collapsed) => collapse(section.id, collapsed)} />}</SectionGrid></SortableContext>{tab.sections.length === 0 && <div className="rounded-3xl border border-dashed border-white/10 py-16 text-center text-slate-500">This tab has no sections yet.</div>}</TabCanvas></motion.main>;
   return <DndContext sensors={sensors} collisionDetection={collisionDetection} onDragStart={start} onDragOver={over} onDragEnd={end} onDragCancel={resetDrag}>
     <div className="dashboard-shell" data-tab-position={tabPosition} data-fit-viewport={fitViewport || undefined}>
-      <nav className="chroma-tabs dashboard-tabs" data-position={tabPosition} aria-label="Dashboard tabs"><SortableContext items={config.tabs.map((item) => `tab:${item.id}`)}>{config.tabs.map((item) => <SortableTab key={item.id} tab={item} active={item.id === tab?.id} editing={editing} accent={resolveTabAppearance(item, config.homepage).accent} />)}</SortableContext></nav>
+      <nav className="chroma-tabs dashboard-tabs" data-position={tabPosition} aria-label="Dashboard tabs"><SortableContext items={config.tabs.map((item) => `tab:${item.id}`)}>{config.tabs.map((item) => <SortableTab key={item.id} tab={item} active={item.id === tab?.id} editing={editing} accent={resolveTabAppearance(item, config.homepage).accent} />)}</SortableContext>{!editing && <AddMenu compact />}</nav>
       {/* Keep exactly one canvas mounted: exit copies can duplicate sortable IDs after a move. */}
       {canvas}
     </div>

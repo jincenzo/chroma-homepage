@@ -323,6 +323,7 @@ test("creates, moves, saves, and reloads a link card", async ({ page, request })
   await page.getByTestId("profile-switcher").click();
   await page.getByRole("menuitem", { name: "Homepage settings", exact: true }).click();
   await page.getByTestId("section-home-quick-access").click({ position: { x: 12, y: 12 } });
+  await page.getByRole("button", { name: "Add new item", exact: true }).click();
   await page.getByTestId("add-card").click();
   await page.getByLabel("Label").fill("Playwright Link");
   const card = page.getByText("Playwright Link", { exact: true }).locator("xpath=ancestor::article");
@@ -457,6 +458,7 @@ test("pasting a URL fills a new card and persists the suggested metadata", async
   await page.goto("/");
   await page.getByTestId("profile-switcher").click();
   await page.getByRole("menuitem", { name: "Homepage settings", exact: true }).click();
+  await page.getByRole("button", { name: "Add new item", exact: true }).click();
   await page.getByTestId("add-card").click();
   await page.getByLabel("URL", { exact: true }).fill("https://discovered.example/");
   await expect(page.getByLabel("Label", { exact: true })).toHaveValue("Discovered service");
@@ -511,6 +513,7 @@ test("creates an independent homepage, protects drafts, saves and remembers the 
   await expect(selector).toBeDisabled();
   await expect(page.getByRole("menuitem", { name: "New profile", exact: true })).toBeHidden();
   await page.getByLabel("Homepage title / profile name", { exact: true }).fill("History workspace");
+  await page.getByRole("button", { name: "Add new item", exact: true }).click();
   await page.getByTestId("add-card").click();
   await page.getByLabel("Label", { exact: true }).fill("Only in sandbox");
   await page.getByRole("button", { name: "Save", exact: true }).click();
@@ -526,6 +529,7 @@ test("creates an independent homepage, protects drafts, saves and remembers the 
   await switchProfile(page, id);
   await page.getByTestId("profile-switcher").click();
   await page.getByRole("menuitem", { name: "Homepage settings", exact: true }).click();
+  await page.getByRole("button", { name: "Add new item", exact: true }).click();
   await page.getByTestId("add-card").click();
   await page.getByLabel("Label", { exact: true }).fill("Discard this");
   await page.getByRole("button", { name: "Cancel", exact: true }).click();
